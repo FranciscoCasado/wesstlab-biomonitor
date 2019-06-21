@@ -1,5 +1,18 @@
 /.metadata/
 
-# Compiled Objects
-*/FlashOnly_OAD/*
-*/FlashROM/*
+# Compiled Objects & Debugging
+*/FlashOnly_OAD
+*/FlashROM
+*/.launches
+
+# XDC artifacts
+*/.xdchelp
+
+# VS Code
+.vscode
+
+# JX browser
+.jxbrowser-data
+
+# Others
+RemoteSystemsTempFiles
