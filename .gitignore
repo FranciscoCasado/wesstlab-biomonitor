@@ -5,6 +5,9 @@
 */FlashROM
 */.launches
 
+# Configs
+*/.config
+
 # XDC artifacts
 */.xdchelp
 
@@ -16,3 +19,9 @@
 
 # Others
 RemoteSystemsTempFiles
+
+# Libs & Imported Projects
+bim_extflash
+ble_sdk_2_02_01_18
+tirtos_cc13xx_cc26xx_2_20_01_08
+sensortag_cc2650stk_stack
