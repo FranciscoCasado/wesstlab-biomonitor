@@ -322,6 +322,51 @@ const SPI_Config SPI_config[] = {
  *  ========================== SPI DMA end =====================================
 */
 
+/*
+ *  ========================== SD-SPI begin ===================================
+ */
+/* Place into subsections to allow the TI linker to remove items properly */
+#if defined(__TI_COMPILER_VERSION__)
+#pragma DATA_SECTION(SPI_config, ".const:SPI_config")
+#pragma DATA_SECTION(spiCC26XXDMAHWAttrs, ".const:spiCC26XXDMAHWAttrs")
+#endif
+
+/* Include drivers */
+#include "SDSPICC26XXDMA.h"
+
+/* SDSPI objects */
+SDSPICC26XXDMA_Object sdspiCC26XXDMAObjects[CC2650STK_SPICOUNT];
+
+/* SDSPI configuration structure, describing which pins are to be used */
+const SDSPICC26XXDMA_HWAttrsV1 sdspiCC26XXDMAHWAttrs[CC2650STK_SDSPICOUNT] = {
+    {
+        .baseAddr           = SSI0_BASE,
+        .intNum             = INT_SSI0_COMB,
+        .intPriority        = ~0,
+        .swiPriority        = 0,
+        .powerMngrId        = PowerCC26XX_PERIPH_SSI0,
+        .defaultTxBufValue  = 0,
+        .rxChannelBitMask   = 1<<UDMA_CHAN_SSI0_RX,
+        .txChannelBitMask   = 1<<UDMA_CHAN_SSI0_TX,
+        .mosiPin            = Board_SPI0_MOSI,
+        .misoPin            = Board_SPI0_MISO,
+        .clkPin             = Board_SPI0_CLK,
+        .csnPin             = Board_SPI0_CSN
+    },
+};
+
+/* SDSPI configuration structure */
+const SDSPI_Config SDSPI_config[] = {
+    {
+         .fxnTablePtr = &SDSPICC26XXDMA_fxnTable,
+         .object      = &sdspiCC26XXDMAObjects[0],
+         .hwAttrs     = &sdspiCC26XXDMAHWAttrs[0]
+    },
+    {NULL, NULL, NULL}
+};
+/*
+ *  ========================== SD-SPI end =====================================
+*/
 
 /*
  *  ============================= I2C Begin=====================================

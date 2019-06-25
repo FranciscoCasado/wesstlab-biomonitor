@@ -191,9 +191,12 @@ extern const PIN_Config BoardGpioInitTable[];
 
 #define Board_SPI0_MISO IOID_7  //IOID_12 /* RF1.20 */  //JCL
 #define Board_SPI0_MOSI IOID_6  //IOID_11 /* RF1.18 */  //JCL
-#define Board_SPI0_CLK  IOID_8   //IOID_10 /* RF1.16 */  //JCL
+#define Board_SPI0_CLK  IOID_8  //IOID_10 /* RF1.16 */  //JCL
 
-#define Board_SPI0_CSN  PIN_UNASSIGNED   //JCL//
+                                /* IOID_9 is also used to enable sensors (Board_MPU_POWER) */
+#define Board_SPI0_CSN  IOID_9  // Be careful in order to not interfere with other sensors
+                                /* Keep in mind that a logic inverter is used in the board */
+
 #define Board_SPI1_MISO PIN_UNASSIGNED
 #define Board_SPI1_MOSI PIN_UNASSIGNED
 #define Board_SPI1_CLK  PIN_UNASSIGNED
@@ -458,6 +461,16 @@ typedef enum CC2650STK_SPIName {
 
     CC2650STK_SPICOUNT
 } CC2650STK_SPIName;
+
+/*!
+ *  @def    CC2650STK_SDSPIName
+ *  @brief  Enum of SDSPI names on the CC2650 dev board
+ */
+typedef enum CC2650STK_SDSPIName {
+    CC2650STK_SDSPI0 = 0,
+
+    CC2650STK_SDSPICOUNT
+} CC2650STK_SDSPIName;
 
 /*!
  *  @def    CC2650STK_TRNGName
