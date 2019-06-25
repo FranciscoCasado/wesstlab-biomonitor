@@ -30,27 +30,27 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /** ============================================================================
- *  @file       SDSPITiva.h
+ *  @file       SDSPICC26XX.h
  *
- *  @brief      SDSPI driver implementation for a Tiva SPI peripheral used
+ *  @brief      SDSPI driver implementation for a CC26XX SPI peripheral used
  *              with the SDSPI driver.
  *
  *  The SDSPI header file should be included in an application as follows:
  *  @code
  *  #include <ti/drivers/SDSPI.h>
- *  #include <ti/drivers/sdspi/SDSPITiva.h>
+ *  #include <ti/drivers/sdspi/SDSPICC26XX.h>
  *  @endcode
  *
  *  Refer to @ref SDSPI.h for a complete description of APIs & example of use.
  *
- *  This SDSPI driver implementation is designed to operate on a Tiva SPI
+ *  This SDSPI driver implementation is designed to operate on a CC26XX SPI
  *  controller using a polling method.
  *
  *  ============================================================================
  */
 
-#ifndef ti_drivers_sdspi_SDSPITiva__include
-#define ti_drivers_sdspi_SDSPITiva__include
+#ifndef ti_drivers_sdspi_SDSPICC26XX__include
+#define ti_drivers_sdspi_SDSPICC26XX__include
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,34 +64,34 @@ extern "C" {
 
 /**
  *  @addtogroup SDSPI_STATUS
- *  SDSPITiva_STATUS_* macros are command codes only defined in the
- *  SDSPITiva.h driver implementation and need to:
+ *  SDSPICC26XX_STATUS_* macros are command codes only defined in the
+ *  SDSPICC26XX.h driver implementation and need to:
  *  @code
- *  #include <ti/drivers/sdspi/SDSPITiva.h>
+ *  #include <ti/drivers/sdspi/SDSPICC26XX.h>
  *  @endcode
  *  @{
  */
 
-/* Add SDSPITiva_STATUS_* macros here */
+/* Add SDSPICC26XX_STATUS_* macros here */
 
 /** @}*/
 
 /**
  *  @addtogroup SDSPI_CMD
- *  SDSPITiva_CMD_* macros are command codes only defined in the
- *  SDSPITiva.h driver implementation and need to:
+ *  SDSPICC26XX_CMD_* macros are command codes only defined in the
+ *  SDSPICC26XX.h driver implementation and need to:
  *  @code
- *  #include <ti/drivers/sdspi/SDSPITiva.h>
+ *  #include <ti/drivers/sdspi/SDSPICC26XX.h>
  *  @endcode
  *  @{
  */
 
-/* Add SDSPITiva_CMD_* macros here */
+/* Add SDSPICC26XX_CMD_* macros here */
 
 /** @}*/
 
-#if defined(TIVAWARE)
-/* c99 types needed by TivaWare */
+#if defined(CC26XXWARE)
+/* c99 types needed by CC26XXWare */
 typedef uint32_t            SDSPIBaseAddrType;
 typedef uint32_t            SDSPIDataType;
 #else /* MWARE */
@@ -100,26 +100,26 @@ typedef unsigned long       SDSPIDataType;
 #endif
 
 /* SDSPI function table */
-extern const SDSPI_FxnTable SDSPITiva_fxnTable;
+extern const SDSPI_FxnTable SDSPICC26XX_fxnTable;
 
 /*!
  *  @brief  SD Card type inserted
  */
-typedef enum SDSPITiva_CardType {
-    SDSPITiva_NOCARD = 0, /*!< Unrecognized Card */
-    SDSPITiva_MMC = 1,    /*!< Multi-media Memory Card (MMC) */
-    SDSPITiva_SDSC = 2,   /*!< Standard SDCard (SDSC) */
-    SDSPITiva_SDHC = 3    /*!< High Capacity SDCard (SDHC) */
-} SDSPITiva_CardType;
+typedef enum SDSPICC26XX_CardType {
+    SDSPICC26XX_NOCARD = 0, /*!< Unrecognized Card */
+    SDSPICC26XX_MMC = 1,    /*!< Multi-media Memory Card (MMC) */
+    SDSPICC26XX_SDSC = 2,   /*!< Standard SDCard (SDSC) */
+    SDSPICC26XX_SDHC = 3    /*!< High Capacity SDCard (SDHC) */
+} SDSPICC26XX_CardType;
 
 /*!
- *  @brief  SDSPITiva Hardware attributes
+ *  @brief  SDSPICC26XX Hardware attributes
  *
- *  The SDSPITiva configuration structure describes to the SDSPITiva
+ *  The SDSPICC26XX configuration structure describes to the SDSPICC26XX
  *  driver implementation hardware specifies on which SPI peripheral, GPIO Pins
  *  and Ports are to be used.
  *
- *  The SDSPITiva driver uses this information to:
+ *  The SDSPICC26XX driver uses this information to:
  *  - configure and reconfigure specific ports/pins to initialize the SD Card
  *    for SPI mode
  *  - identify which SPI peripheral is used for data communications
@@ -135,13 +135,13 @@ typedef enum SDSPITiva_CardType {
  *  MOSI mode.
  *
  *  These fields are used by driverlib APIs and therefore must be populated by
- *  driverlib macro definitions. For TivaWare these definitions are found in:
+ *  driverlib macro definitions. For CC26XXWare these definitions are found in:
  *      - inc/hw_memmap.h
  *
- *  @struct SDSPITiva_HWAttrs
+ *  @struct SDSPICC26XX_HWAttrs
  *  An example configuration structure could look as the following:
  *  @code
- *  const SDSPITiva_HWAttrs sdspiTivaHWattrs = {
+ *  const SDSPICC26XX_HWAttrs sdspiCC26XXHWattrs = {
  *      {
  *          .baseAddr = SSI3_BASE,
  *
@@ -157,7 +157,7 @@ typedef enum SDSPITiva_CardType {
  *  };
  *  @endcode
  */
-typedef struct SDSPITiva_HWAttrs {
+typedef struct SDSPICC26XX_HWAttrs {
     /*!< SSI Peripheral's base address */
     SDSPIBaseAddrType baseAddr;
 
@@ -180,23 +180,23 @@ typedef struct SDSPITiva_HWAttrs {
     uint32_t portCS;
     /*!< GPIO Pin used for the chip select */
     uint32_t pinCS;
-} SDSPITiva_HWAttrs;
+} SDSPICC26XX_HWAttrs;
 
 /*!
- *  @brief  SDSPITiva Object
+ *  @brief  SDSPICC26XX Object
  *
  *  The application must not access any member variables of this structure!
  */
-typedef struct SDSPITiva_Object {
+typedef struct SDSPICC26XX_Object {
     uint32_t            driveNumber;   /*!< Drive number used by FatFs */
     DSTATUS             diskState;     /*!< Disk status */
-    SDSPITiva_CardType  cardType;      /*!< SDCard Card Command Class (CCC) */
+    SDSPICC26XX_CardType  cardType;      /*!< SDCard Card Command Class (CCC) */
     uint32_t            bitRate;       /*!< SPI bus bit rate (Hz) */
     FATFS               filesystem;    /*!< FATFS data object */
-} SDSPITiva_Object, *SDSPITiva_Handle;
+} SDSPICC26XX_Object, *SDSPICC26XX_Handle;
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* ti_drivers_sdspi_SDSPITiva__include */
+#endif /* ti_drivers_sdspi_SDSPICC26XX__include */

@@ -46,14 +46,14 @@
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/family/arm/m3/Hwi.h>
 
-#include <ti/drivers/sdspi/SDSPITiva.h>
+#include "SDSPICC26XX.h"
 
 /* driverlib header files */
 #include <inc/hw_memmap.h>
 #include <inc/hw_types.h>
 #include <driverlib/gpio.h>
 #include <driverlib/ssi.h>
-#include <driverlib/sysctl.h>
+#include <driverlib/sys_ctrl.h>
 
 /* Definitions for MMC/SDC command */
 #define CMD0                        (0x40+0)    /* GO_IDLE_STATE */
@@ -91,41 +91,41 @@ static SDSPI_Handle sdspiHandles[_VOLUMES];
 static uint32_t mSScalingFactor = 0;
 
 /* Function prototypes */
-static uint32_t       rcvr_datablock(SDSPITiva_HWAttrs const *hwAttrs,
+static uint32_t       rcvr_datablock(SDSPICC26XX_HWAttrs const *hwAttrs,
                                      uint8_t *buf, uint32_t btr);
-static inline void    releaseSPIBus(SDSPITiva_HWAttrs const *hwAttrs);
-static inline uint8_t rxSPI(SDSPITiva_HWAttrs const *hwAttrs);
-static uint8_t        send_cmd(SDSPITiva_HWAttrs const *hwAttrs, uint8_t cmd,
+static inline void    releaseSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs);
+static inline uint8_t rxSPI(SDSPICC26XX_HWAttrs const *hwAttrs);
+static uint8_t        send_cmd(SDSPICC26XX_HWAttrs const *hwAttrs, uint8_t cmd,
                                uint32_t arg);
-static void           send_initial_clock_train(SDSPITiva_HWAttrs const *hwAttrs);
-static inline void    takeSPIBus(SDSPITiva_HWAttrs const *hwAttrs);
-static inline void    txSPI(SDSPITiva_HWAttrs const *hwAttrs, uint8_t dat);
-static uint8_t        wait_ready(SDSPITiva_HWAttrs const *hwAttrs);
-static bool           xmit_datablock(SDSPITiva_HWAttrs const *hwAttrs,
+static void           send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs);
+static inline void    takeSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs);
+static inline void    txSPI(SDSPICC26XX_HWAttrs const *hwAttrs, uint8_t dat);
+static uint8_t        wait_ready(SDSPICC26XX_HWAttrs const *hwAttrs);
+static bool           xmit_datablock(SDSPICC26XX_HWAttrs const *hwAttrs,
                                      const uint8_t *buf, uint8_t token);
 
 /* FatFs disk I/O functions */
-DSTATUS  SDSPITiva_diskInitialize(BYTE drv);
-DRESULT  SDSPITiva_diskIOctrl(BYTE drv, BYTE ctrl, void *buf);
-DRESULT  SDSPITiva_diskRead(BYTE drv, BYTE *buf,
+DSTATUS  SDSPICC26XX_diskInitialize(BYTE drv);
+DRESULT  SDSPICC26XX_diskIOctrl(BYTE drv, BYTE ctrl, void *buf);
+DRESULT  SDSPICC26XX_diskRead(BYTE drv, BYTE *buf,
                             DWORD sector, UINT count);
-DSTATUS  SDSPITiva_diskStatus(BYTE drv);
-DRESULT  SDSPITiva_diskWrite(BYTE drv, const BYTE *buf,
+DSTATUS  SDSPICC26XX_diskStatus(BYTE drv);
+DRESULT  SDSPICC26XX_diskWrite(BYTE drv, const BYTE *buf,
                              DWORD sector, UINT count);
 
-/* SDSPITiva functions */
-void         SDSPITiva_close(SDSPI_Handle handle);
-int          SDSPITiva_control(SDSPI_Handle handle, unsigned int cmd, void *arg);
-void         SDSPITiva_init(SDSPI_Handle handle);
-SDSPI_Handle SDSPITiva_open(SDSPI_Handle handle, unsigned char drv,
+/* SDSPICC26XX functions */
+void         SDSPICC26XX_close(SDSPI_Handle handle);
+int          SDSPICC26XX_control(SDSPI_Handle handle, unsigned int cmd, void *arg);
+void         SDSPICC26XX_init(SDSPI_Handle handle);
+SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle, unsigned char drv,
                             SDSPI_Params *params);
 
-/* SDSPI function table for SDSPITiva implementation */
-const SDSPI_FxnTable SDSPITiva_fxnTable = {
-    SDSPITiva_init,
-    SDSPITiva_open,
-    SDSPITiva_close,
-    SDSPITiva_control
+/* SDSPI function table for SDSPICC26XX implementation */
+const SDSPI_FxnTable SDSPICC26XX_fxnTable = {
+    SDSPICC26XX_init,
+    SDSPICC26XX_open,
+    SDSPICC26XX_close,
+    SDSPICC26XX_control
 };
 
 /*
@@ -134,7 +134,7 @@ const SDSPI_FxnTable SDSPITiva_fxnTable = {
  *
  *  btr count must be an even number
  */
-static uint32_t rcvr_datablock(SDSPITiva_HWAttrs const *hwAttrs,
+static uint32_t rcvr_datablock(SDSPICC26XX_HWAttrs const *hwAttrs,
                                uint8_t *buf, uint32_t btr)
 {
     uint8_t   token;
@@ -178,7 +178,7 @@ static uint32_t rcvr_datablock(SDSPITiva_HWAttrs const *hwAttrs,
  *
  *  @param  hwAttrs     Pointer to hardware attributes
  */
-static inline void releaseSPIBus(SDSPITiva_HWAttrs const *hwAttrs)
+static inline void releaseSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     /* Deselect the SD card. */
     GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, hwAttrs->pinCS);
@@ -190,7 +190,7 @@ static inline void releaseSPIBus(SDSPITiva_HWAttrs const *hwAttrs)
  *
  *  @param  hwAttrs     Pointer to hardware attributes
  */
-static inline uint8_t rxSPI(SDSPITiva_HWAttrs const *hwAttrs)
+static inline uint8_t rxSPI(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     SDSPIDataType   rcvdat;
 
@@ -213,7 +213,7 @@ static inline uint8_t rxSPI(SDSPITiva_HWAttrs const *hwAttrs)
  *
  *  @param  arg         SD command argument
  */
-static uint8_t send_cmd(SDSPITiva_HWAttrs const *hwAttrs, uint8_t cmd, uint32_t arg)
+static uint8_t send_cmd(SDSPICC26XX_HWAttrs const *hwAttrs, uint8_t cmd, uint32_t arg)
 {
     uint8_t n;
     uint8_t res;
@@ -269,7 +269,7 @@ static uint8_t send_cmd(SDSPITiva_HWAttrs const *hwAttrs, uint8_t cmd, uint32_t 
  *
  *  @param  hwAttrs     Pointer to hardware attributes
  */
-static void send_initial_clock_train(SDSPITiva_HWAttrs const *hwAttrs)
+static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     unsigned char   i;
     SDSPIDataType   dat;
@@ -310,7 +310,7 @@ static void send_initial_clock_train(SDSPITiva_HWAttrs const *hwAttrs)
  *
  *  @param  hwAttrs     Pointer to hardware attributes
  */
-static inline void takeSPIBus(SDSPITiva_HWAttrs const *hwAttrs)
+static inline void takeSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     /* Select the SD card. */
     GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, 0);
@@ -324,7 +324,7 @@ static inline void takeSPIBus(SDSPITiva_HWAttrs const *hwAttrs)
  *
  *  @param  dat         Data to be sent onto the SPI bus
  */
-static inline void txSPI(SDSPITiva_HWAttrs const *hwAttrs, uint8_t dat)
+static inline void txSPI(SDSPICC26XX_HWAttrs const *hwAttrs, uint8_t dat)
 {
     SDSPIDataType   rcvdat;
 
@@ -344,7 +344,7 @@ static inline void txSPI(SDSPITiva_HWAttrs const *hwAttrs, uint8_t dat)
  *
  *  @param  hwAttrs     Pointer to hardware attributes
  */
-static uint8_t wait_ready(SDSPITiva_HWAttrs const *hwAttrs)
+static uint8_t wait_ready(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     uint8_t   res;
     uint32_t  timestampTimeout;
@@ -375,7 +375,7 @@ static uint8_t wait_ready(SDSPITiva_HWAttrs const *hwAttrs)
  *
  *  @param  hwAttrs     Pointer to hardware attributes
  *
- *  @param  params      SDSPITiva hardware attributes
+ *  @param  params      SDSPICC26XX hardware attributes
  *
  *  @param  buf         pointer to const data buffer
  *
@@ -385,7 +385,7 @@ static uint8_t wait_ready(SDSPITiva_HWAttrs const *hwAttrs)
  *                      START_MULTIBLOCK_TOKEN
  *                      STOP_MULTIBLOCK_TOKEN
  */
-static bool xmit_datablock(SDSPITiva_HWAttrs const *hwAttrs,
+static bool xmit_datablock(SDSPICC26XX_HWAttrs const *hwAttrs,
                            const uint8_t *buf, uint8_t token)
 {
     uint8_t resp;
@@ -429,19 +429,19 @@ static bool xmit_datablock(SDSPITiva_HWAttrs const *hwAttrs,
 #endif /* _READONLY */
 
 /*
- *  ======== SDSPITiva_close ========
- *  Function to unmount the FatFs filesystem and unregister the SDSPITiva
+ *  ======== SDSPICC26XX_close ========
+ *  Function to unmount the FatFs filesystem and unregister the SDSPICC26XX
  *  disk I/O functions from SYS/BIOS' FatFS module.
  *
  *  @param  handle      SDSPI_Handle returned by SDSPI_open()
  */
-void SDSPITiva_close(SDSPI_Handle handle)
+void SDSPICC26XX_close(SDSPI_Handle handle)
 {
     unsigned int               key;
     DRESULT                    dresult;
     FRESULT                    fresult;
-    SDSPITiva_Object          *object = handle->object;
-    SDSPITiva_HWAttrs const   *hwAttrs = handle->hwAttrs;
+    SDSPICC26XX_Object          *object = handle->object;
+    SDSPICC26XX_HWAttrs const   *hwAttrs = handle->hwAttrs;
     TCHAR                      path[3];
 
     path[0] = '0' + object->driveNumber;
@@ -476,33 +476,33 @@ void SDSPITiva_close(SDSPI_Handle handle)
 }
 
 /*
- *  ======== SDSPITiva_control ========
+ *  ======== SDSPICC26XX_control ========
  *  @pre    Function assumes that the handle is not NULL
  */
-int SDSPITiva_control(SDSPI_Handle handle, unsigned int cmd, void *arg)
+int SDSPICC26XX_control(SDSPI_Handle handle, unsigned int cmd, void *arg)
 {
 	/* No implementation yet */
 	return (SDSPI_STATUS_UNDEFINEDCMD);
 }
 
 /*
- *  ======== SDSPITiva_diskInitialize ========
+ *  ======== SDSPICC26XX_diskInitialize ========
  *  Function to initialize the SD Card.  This function is called by the FatFs
  *  module and must not be called by the application!
  *
  *  @param  drv         Drive Number
  */
-DSTATUS SDSPITiva_diskInitialize(BYTE drv)
+DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
 {
     uint8_t                    n;
     uint8_t                    ocr[4];
-    SDSPITiva_CardType         cardType;
+    SDSPICC26XX_CardType         cardType;
     Types_FreqHz               freq;
     uint32_t                   timestampTimeout;
     uint32_t                   timestampStart;
     uint32_t                   timestampCurrent;
-    SDSPITiva_Object          *object = sdspiHandles[drv]->object;
-    SDSPITiva_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
+    SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
+    SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
 
     /* No card in the socket */
     if (object->diskState & STA_NODISK) {
@@ -517,7 +517,7 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
 
     /* Select the SD Card's chip select */
     takeSPIBus(hwAttrs);
-    cardType = SDSPITiva_NOCARD;
+    cardType = SDSPICC26XX_NOCARD;
 
     /* Send the CMD0 to put the SD Card in "Idle" state */
     if (send_cmd(hwAttrs, CMD0, 0) == 1) {
@@ -564,7 +564,7 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
                     for (n = 0; n < 4; n++) {
                         ocr[n] = rxSPI(hwAttrs);
                     }
-                    cardType = (ocr[0] & 0x40) ? SDSPITiva_SDHC : SDSPITiva_SDSC;
+                    cardType = (ocr[0] & 0x40) ? SDSPICC26XX_SDHC : SDSPICC26XX_SDSC;
                 }
             }
         }
@@ -577,10 +577,10 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
              */
             if ((send_cmd(hwAttrs, CMD55, 0) <= 1 &&
                  send_cmd(hwAttrs, CMD41, 0) <= 1)) {
-                cardType = SDSPITiva_SDSC;
+                cardType = SDSPICC26XX_SDSC;
             }
             else {
-                cardType = SDSPITiva_MMC;
+                cardType = SDSPICC26XX_MMC;
             }
 
             /* Wait for data packet in timeout of 1s */
@@ -590,7 +590,7 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
                 timestampStart = ~0;
             }
             do {
-                if (cardType == SDSPITiva_SDSC) {
+                if (cardType == SDSPICC26XX_SDSC) {
                     /* ACMD41 */
                     if (send_cmd(hwAttrs, CMD55, 0) <= 1 &&
                         send_cmd(hwAttrs, CMD41, 0) == 0) {
@@ -611,7 +611,7 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
 
             /* Select R/W block length */
             if ((timestampTimeout) || send_cmd(hwAttrs, CMD16, SD_SECTOR_SIZE) != 0) {
-                cardType = SDSPITiva_NOCARD;
+                cardType = SDSPICC26XX_NOCARD;
             }
         }
     }
@@ -625,7 +625,7 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
     rxSPI(hwAttrs);
 
     /* Check to see if a card type was determined */
-    if (cardType != SDSPITiva_NOCARD) {
+    if (cardType != SDSPICC26XX_NOCARD) {
         /* Reconfigure the SPI bust at the new frequency rate */
         BIOS_getCpuFreq(&freq);
         SSIDisable(hwAttrs->baseAddr);
@@ -657,7 +657,7 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
 }
 
 /*
- *  ======== SDSPITiva_diskIOctrl ========
+ *  ======== SDSPICC26XX_diskIOctrl ========
  *  Function to perform specifed disk operations. This function is called by the
  *  FatFs module and must not be called by the application!
  *
@@ -667,14 +667,14 @@ DSTATUS SDSPITiva_diskInitialize(BYTE drv)
  *
  *  @param  buf         Buffer to send/receive control data
  */
-DRESULT SDSPITiva_diskIOctrl(BYTE drv, BYTE ctrl, void *buf)
+DRESULT SDSPICC26XX_diskIOctrl(BYTE drv, BYTE ctrl, void *buf)
 {
     DRESULT                   res = RES_ERROR;
     uint8_t                   n;
     uint8_t                   csd[16];
     WORD                      csize;
-    SDSPITiva_Object         *object = sdspiHandles[drv]->object;
-    SDSPITiva_HWAttrs const  *hwAttrs = sdspiHandles[drv]->hwAttrs;
+    SDSPICC26XX_Object         *object = sdspiHandles[drv]->object;
+    SDSPICC26XX_HWAttrs const  *hwAttrs = sdspiHandles[drv]->hwAttrs;
 
     if (object->diskState & STA_NOINIT) {
         Log_error1("SDSPI:(%p) disk IO control: disk not initialized",
@@ -761,7 +761,7 @@ DRESULT SDSPITiva_diskIOctrl(BYTE drv, BYTE ctrl, void *buf)
 }
 
 /*
- *  ======== SDSPITiva_diskRead ========
+ *  ======== SDSPICC26XX_diskRead ========
  *  Function to perform a disk read from the SDCard. This function is called by
  *  the FatFs module and must not be called by the application!
  *
@@ -773,11 +773,11 @@ DRESULT SDSPITiva_diskIOctrl(BYTE drv, BYTE ctrl, void *buf)
  *
  *  @param  count       Sector count (1...255)
  */
-DRESULT SDSPITiva_diskRead(BYTE drv, BYTE *buf,
+DRESULT SDSPICC26XX_diskRead(BYTE drv, BYTE *buf,
                            DWORD sector, UINT count)
 {
-    SDSPITiva_Object          *object = sdspiHandles[drv]->object;
-    SDSPITiva_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
+    SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
+    SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
 
     if (!count) {
         Log_print1(Diags_USER1, "SDSPI:(%p) disk read: 0 sectors to read",
@@ -797,7 +797,7 @@ DRESULT SDSPITiva_diskRead(BYTE drv, BYTE *buf,
      * On a SDSC card, the sector address is a byte address on the SD Card
      * On a SDHC card, the sector address is address by sector blocks
      */
-    if (object->cardType != SDSPITiva_SDHC) {
+    if (object->cardType != SDSPICC26XX_SDHC) {
         /* Convert to byte address */
         sector *= SD_SECTOR_SIZE;
     }
@@ -837,21 +837,21 @@ DRESULT SDSPITiva_diskRead(BYTE drv, BYTE *buf,
 }
 
 /*
- *  ======== SDSPITiva_diskStatus ========
+ *  ======== SDSPICC26XX_diskStatus ========
  *  Function to return the current disk status. This function is called by
  *  the FatFs module and must not be called by the application!
  *
  *  @param(drv)         Drive Number
  */
-DSTATUS SDSPITiva_diskStatus(BYTE drv)
+DSTATUS SDSPICC26XX_diskStatus(BYTE drv)
 {
     /* Get the pointer to the object */
-    SDSPITiva_Object  *object = sdspiHandles[drv]->object;
+    SDSPICC26XX_Object  *object = sdspiHandles[drv]->object;
 
     /* Use Diags_USER1 to reduce noise in the logs */
     Log_print2(Diags_USER2,
                "SDSPI:(%p) disk status: diskState: %d",
-               ((SDSPITiva_HWAttrs const *)(sdspiHandles[drv]->hwAttrs))->baseAddr,
+               ((SDSPICC26XX_HWAttrs const *)(sdspiHandles[drv]->hwAttrs))->baseAddr,
                object->diskState);
 
     return (object->diskState);
@@ -859,7 +859,7 @@ DSTATUS SDSPITiva_diskStatus(BYTE drv)
 
 #if _READONLY == 0
 /*
- *  ======== SDSPITiva_diskWrite ========
+ *  ======== SDSPICC26XX_diskWrite ========
  *  Function to perform a disk write from the SDCard. This function is called by
  *  the FatFs module and must not be called by the application!
  *
@@ -871,11 +871,11 @@ DSTATUS SDSPITiva_diskStatus(BYTE drv)
  *
  *  @param  count       Sector count (1...255)
  */
-DRESULT SDSPITiva_diskWrite(BYTE drv, const BYTE *buf,
+DRESULT SDSPICC26XX_diskWrite(BYTE drv, const BYTE *buf,
                             DWORD sector, UINT count)
 {
-    SDSPITiva_Object          *object = sdspiHandles[drv]->object;
-    SDSPITiva_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
+    SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
+    SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
 
     if (!count) {
         Log_print1(Diags_USER1, "SDSPI:(%p) disk write: 0 sectors to write",
@@ -900,7 +900,7 @@ DRESULT SDSPITiva_diskWrite(BYTE drv, const BYTE *buf,
      * On a SDSC card, the sector address is a byte address on the SD Card
      * On a SDHC card, the sector address is address by sector blocks
      */
-    if (object->cardType != SDSPITiva_SDHC) {
+    if (object->cardType != SDSPICC26XX_SDHC) {
         /* Convert to byte address if needed */
         sector *= SD_SECTOR_SIZE;
     }
@@ -917,8 +917,8 @@ DRESULT SDSPITiva_diskWrite(BYTE drv, const BYTE *buf,
     }
     /* Multiple block write */
     else {
-        if ((object->cardType == SDSPITiva_SDSC) ||
-            (object->cardType == SDSPITiva_SDHC)) {
+        if ((object->cardType == SDSPICC26XX_SDSC) ||
+            (object->cardType == SDSPICC26XX_SDHC)) {
             send_cmd(hwAttrs, CMD55, 0);
             send_cmd(hwAttrs, CMD23, count);    /* ACMD23 */
         }
@@ -949,22 +949,22 @@ DRESULT SDSPITiva_diskWrite(BYTE drv, const BYTE *buf,
 #endif /* _READONLY */
 
 /*
- *  ======== SDSPITiva_init ========
+ *  ======== SDSPICC26XX_init ========
  *  Function to initialize SDSPI module
  */
-void SDSPITiva_init(SDSPI_Handle handle)
+void SDSPICC26XX_init(SDSPI_Handle handle)
 {
-    SDSPITiva_Object       *object = handle->object;
+    SDSPICC26XX_Object       *object = handle->object;
 
     /* Mark the object as available */
     object->driveNumber = DRIVE_NOT_MOUNTED;
     object->diskState = STA_NOINIT;
-    object->cardType = SDSPITiva_NOCARD;
+    object->cardType = SDSPICC26XX_NOCARD;
 }
 
 /*
- *  ======== SDSPITiva_open ========
- *  Function to mount the FatFs filesystem and register the SDSPITiva disk
+ *  ======== SDSPICC26XX_open ========
+ *  Function to mount the FatFs filesystem and register the SDSPICC26XX disk
  *  I/O functions with SYS/BIOS' FatFS module.
  *
  *  This function also configures some basic GPIO settings needed for the
@@ -974,7 +974,7 @@ void SDSPITiva_init(SDSPI_Handle handle)
  *  @param  drv         Drive Number
  *  @param  params      SDSPI parameters
  */
-SDSPI_Handle SDSPITiva_open(SDSPI_Handle handle,
+SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
                             unsigned char drv,
                             SDSPI_Params *params)
 {
@@ -982,8 +982,8 @@ SDSPI_Handle SDSPITiva_open(SDSPI_Handle handle,
     FRESULT                   fresult;
     unsigned int              key;
     Types_FreqHz              freq;
-    SDSPITiva_Object         *object = handle->object;
-    SDSPITiva_HWAttrs const  *hwAttrs = handle->hwAttrs;;
+    SDSPICC26XX_Object         *object = handle->object;
+    SDSPICC26XX_HWAttrs const  *hwAttrs = handle->hwAttrs;;
     TCHAR                     path[3];
 
     /* Determine if the device was already opened */
@@ -1029,18 +1029,18 @@ SDSPI_Handle SDSPITiva_open(SDSPI_Handle handle,
 
     /* Register the new disk_*() functions */
     dresult = disk_register(object->driveNumber,
-                            SDSPITiva_diskInitialize,
-                            SDSPITiva_diskStatus,
-                            SDSPITiva_diskRead,
-                            SDSPITiva_diskWrite,
-                            SDSPITiva_diskIOctrl);
+                            SDSPICC26XX_diskInitialize,
+                            SDSPICC26XX_diskStatus,
+                            SDSPICC26XX_diskRead,
+                            SDSPICC26XX_diskWrite,
+                            SDSPICC26XX_diskIOctrl);
 
     /* Check for drive errors */
     if (dresult != RES_OK) {
         Log_error1("SDSPI:(%p) disk functions not registered",
                     hwAttrs->baseAddr);
 
-        SDSPITiva_close(handle);
+        SDSPICC26XX_close(handle);
         return (NULL);
     }
 
@@ -1057,7 +1057,7 @@ SDSPI_Handle SDSPITiva_open(SDSPI_Handle handle,
         Log_error2("SDSPI:(%p) drive %d not mounted",
                     hwAttrs->baseAddr, object->driveNumber);
 
-        SDSPITiva_close(handle);
+        SDSPICC26XX_close(handle);
         return (NULL);
     }
 
