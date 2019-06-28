@@ -42,19 +42,28 @@
 #include <xdc/runtime/Log.h>
 #include <xdc/runtime/Types.h>
 #include <xdc/runtime/Timestamp.h>
+#include <xdc/runtime/System.h>
+#include <ti/sysbios/family/arm/cc26xx/Power.h>
+#include <ti/sysbios/family/arm/cc26xx/PowerCC26XX.h>
 
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/family/arm/m3/Hwi.h>
 
 #include "SDSPICC26XX.h"
+#include <ti/drivers/pin/PINCC26XX.h>
+#include <ti/drivers/SDSPI.h>
 
 /* driverlib header files */
 #include <inc/hw_memmap.h>
 #include <inc/hw_types.h>
-#include <driverlib/gpio.h>
+#include <inc/hw_ints.h>
 #include <driverlib/ssi.h>
 #include <driverlib/sys_ctrl.h>
-
+#include <driverlib/ioc.h>
+#include <driverlib/prcm.h>
+#include <driverlib/rom.h>
+#include <PINCC26XX.h>
+#include "Board.h"
 /* Definitions for MMC/SDC command */
 #define CMD0                        (0x40+0)    /* GO_IDLE_STATE */
 #define CMD1                        (0x40+1)    /* SEND_OP_COND */
@@ -128,6 +137,10 @@ const SDSPI_FxnTable SDSPICC26XX_fxnTable = {
     SDSPICC26XX_control
 };
 
+/* Default SDSPI params */
+extern const SDSPI_Params SDSPI_defaultParams;
+extern PIN_Handle ledPinHandle; // TODO: where does this handle come from???
+
 /*
  *  ======== rcvr_datablock ========
  *  Function to receive a block of data from the SDCard
@@ -181,7 +194,9 @@ static uint32_t rcvr_datablock(SDSPICC26XX_HWAttrs const *hwAttrs,
 static inline void releaseSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     /* Deselect the SD card. */
-    GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, hwAttrs->pinCS);
+    IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
+    //GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, hwAttrs->pinCS);
 }
 
 /*
@@ -254,7 +269,7 @@ static uint8_t send_cmd(SDSPICC26XX_HWAttrs const *hwAttrs, uint8_t cmd, uint32_
     }
 
     /* Wait for a valid response in timeout; 10 attempts */
-    n = 10;
+    n = 10; //TODO: Check if this parameter is enough (reference is 80)
     do {
         res = rxSPI(hwAttrs);
     } while ((res & 0x80) && --n);
@@ -275,11 +290,11 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
     SDSPIDataType   dat;
 
     /* Deselect the SD card. */
-    GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, hwAttrs->pinCS);
+    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
 
     /* Switch the SPI TX line to a GPIO and drive it high too. */
-    GPIOPinTypeGPIOOutput(hwAttrs->portMOSI, hwAttrs->pinMOSI);
-    GPIOPinWrite(hwAttrs->portMOSI, hwAttrs->pinMOSI, hwAttrs->pinMOSI);
+    IOCPinTypeGpioOutput( hwAttrs->pinMOSI);//????
+    PIN_setOutputValue(ledPinHandle, hwAttrs->pinMOSI, 1);
 
     /*
      * Send 10 bytes over the SPI bus. This causes the clock to toggle several
@@ -298,7 +313,7 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
     }
 
     /* Revert to hardware control of the SPI TX line. */
-    GPIODirModeSet(hwAttrs->portMOSI, hwAttrs->pinMOSI, GPIO_DIR_MODE_HW);
+    IOCPinTypeSsiMaster(hwAttrs->baseAddr,hwAttrs->pinMISO,hwAttrs->pinMOSI,hwAttrs->pinCS, hwAttrs->pinSCK);  //???
 
     Log_print1(Diags_USER1, "SDSPI:(%p) initialized SD card to SPI mode",
                              hwAttrs->baseAddr);
@@ -313,8 +328,9 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
 static inline void takeSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     /* Select the SD card. */
-    GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, 0);
-}
+    IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 0);
+    }
 
 /*
  *  ======== txSPI ========
@@ -442,14 +458,9 @@ void SDSPICC26XX_close(SDSPI_Handle handle)
     FRESULT                    fresult;
     SDSPICC26XX_Object          *object = handle->object;
     SDSPICC26XX_HWAttrs const   *hwAttrs = handle->hwAttrs;
-    TCHAR                      path[3];
-
-    path[0] = '0' + object->driveNumber;
-    path[1] = ':';
-    path[2] = '\0';
 
     /* Unmount the FatFs drive */
-    fresult = f_mount(NULL, path, 0);
+    fresult = f_mount(object->driveNumber, NULL);
     if (fresult != FR_OK) {
         Log_print2(Diags_USER1,
                    "SDSPI:(%p) Could not unmount FatFs volume @ drive number %d",
@@ -469,6 +480,13 @@ void SDSPICC26XX_close(SDSPI_Handle handle)
     SSIDisable(hwAttrs->baseAddr);
 
     Log_print1(Diags_USER1, "SDSPI:(%p) closed", hwAttrs->baseAddr);
+    IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    // IOCPinTypeGpioOutput( hwAttrs->pinCS); TODO: Why is this repeated?
+    // IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    // IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    
+      /* Release power dependency on SPI. */
+    Power_releaseDependency(hwAttrs->powerMngrId);
 
     key = Hwi_disable();
     object->driveNumber = DRIVE_NOT_MOUNTED;
@@ -494,6 +512,7 @@ int SDSPICC26XX_control(SDSPI_Handle handle, unsigned int cmd, void *arg)
  */
 DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
 {
+   static uint8_t temp;
     uint8_t                    n;
     uint8_t                    ocr[4];
     SDSPICC26XX_CardType         cardType;
@@ -517,7 +536,7 @@ DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
 
     /* Select the SD Card's chip select */
     takeSPIBus(hwAttrs);
-    cardType = SDSPICC26XX_NOCARD;
+    cardType = NOCARD;
 
     /* Send the CMD0 to put the SD Card in "Idle" state */
     if (send_cmd(hwAttrs, CMD0, 0) == 1) {
@@ -564,7 +583,7 @@ DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
                     for (n = 0; n < 4; n++) {
                         ocr[n] = rxSPI(hwAttrs);
                     }
-                    cardType = (ocr[0] & 0x40) ? SDSPICC26XX_SDHC : SDSPICC26XX_SDSC;
+                    cardType = (ocr[0] & 0x40) ? SDHC : SDSC;
                 }
             }
         }
@@ -577,10 +596,10 @@ DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
              */
             if ((send_cmd(hwAttrs, CMD55, 0) <= 1 &&
                  send_cmd(hwAttrs, CMD41, 0) <= 1)) {
-                cardType = SDSPICC26XX_SDSC;
+                cardType = SDSC;
             }
             else {
-                cardType = SDSPICC26XX_MMC;
+                cardType = MMC;
             }
 
             /* Wait for data packet in timeout of 1s */
@@ -590,7 +609,7 @@ DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
                 timestampStart = ~0;
             }
             do {
-                if (cardType == SDSPICC26XX_SDSC) {
+                if (cardType == SDSC) {
                     /* ACMD41 */
                     if (send_cmd(hwAttrs, CMD55, 0) <= 1 &&
                         send_cmd(hwAttrs, CMD41, 0) == 0) {
@@ -611,7 +630,7 @@ DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
 
             /* Select R/W block length */
             if ((timestampTimeout) || send_cmd(hwAttrs, CMD16, SD_SECTOR_SIZE) != 0) {
-                cardType = SDSPICC26XX_NOCARD;
+                cardType = NOCARD;
             }
         }
     }
@@ -625,7 +644,7 @@ DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
     rxSPI(hwAttrs);
 
     /* Check to see if a card type was determined */
-    if (cardType != SDSPICC26XX_NOCARD) {
+    if (cardType != NOCARD) {
         /* Reconfigure the SPI bust at the new frequency rate */
         BIOS_getCpuFreq(&freq);
         SSIDisable(hwAttrs->baseAddr);
@@ -774,7 +793,7 @@ DRESULT SDSPICC26XX_diskIOctrl(BYTE drv, BYTE ctrl, void *buf)
  *  @param  count       Sector count (1...255)
  */
 DRESULT SDSPICC26XX_diskRead(BYTE drv, BYTE *buf,
-                           DWORD sector, UINT count)
+                           DWORD sector, BYTE count)
 {
     SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
     SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
@@ -797,7 +816,7 @@ DRESULT SDSPICC26XX_diskRead(BYTE drv, BYTE *buf,
      * On a SDSC card, the sector address is a byte address on the SD Card
      * On a SDHC card, the sector address is address by sector blocks
      */
-    if (object->cardType != SDSPICC26XX_SDHC) {
+    if (object->cardType != SDHC) {
         /* Convert to byte address */
         sector *= SD_SECTOR_SIZE;
     }
@@ -872,7 +891,7 @@ DSTATUS SDSPICC26XX_diskStatus(BYTE drv)
  *  @param  count       Sector count (1...255)
  */
 DRESULT SDSPICC26XX_diskWrite(BYTE drv, const BYTE *buf,
-                            DWORD sector, UINT count)
+                            DWORD sector, BYTE count)
 {
     SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
     SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
@@ -900,7 +919,7 @@ DRESULT SDSPICC26XX_diskWrite(BYTE drv, const BYTE *buf,
      * On a SDSC card, the sector address is a byte address on the SD Card
      * On a SDHC card, the sector address is address by sector blocks
      */
-    if (object->cardType != SDSPICC26XX_SDHC) {
+    if (object->cardType != SDHC) {
         /* Convert to byte address if needed */
         sector *= SD_SECTOR_SIZE;
     }
@@ -917,8 +936,8 @@ DRESULT SDSPICC26XX_diskWrite(BYTE drv, const BYTE *buf,
     }
     /* Multiple block write */
     else {
-        if ((object->cardType == SDSPICC26XX_SDSC) ||
-            (object->cardType == SDSPICC26XX_SDHC)) {
+        if ((object->cardType == SDSC) ||
+            (object->cardType == SDHC)) {
             send_cmd(hwAttrs, CMD55, 0);
             send_cmd(hwAttrs, CMD23, count);    /* ACMD23 */
         }
@@ -959,7 +978,7 @@ void SDSPICC26XX_init(SDSPI_Handle handle)
     /* Mark the object as available */
     object->driveNumber = DRIVE_NOT_MOUNTED;
     object->diskState = STA_NOINIT;
-    object->cardType = SDSPICC26XX_NOCARD;
+    object->cardType = NOCARD;
 }
 
 /*
@@ -983,8 +1002,7 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
     unsigned int              key;
     Types_FreqHz              freq;
     SDSPICC26XX_Object         *object = handle->object;
-    SDSPICC26XX_HWAttrs const  *hwAttrs = handle->hwAttrs;;
-    TCHAR                     path[3];
+    SDSPICC26XX_HWAttrs const  *hwAttrs = handle->hwAttrs;
 
     /* Determine if the device was already opened */
     key = Hwi_disable();
@@ -996,6 +1014,12 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
     object->driveNumber = drv;
     Hwi_restore(key);
 
+    /* Store the SDSPI parameters */
+    if (params == NULL) {
+        /* No params passed in, so use the defaults */
+        params = (SDSPI_Params *) &SDSPI_defaultParams;
+    }
+    
     /* Determine time scaling for ms timeouts */
     Timestamp_getFreq(&freq);
     mSScalingFactor = freq.lo / 1000;
@@ -1004,15 +1028,22 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
     /* Store desired bitRate */
     object->bitRate = params->bitRate;
 
-    GPIODirModeSet(hwAttrs->portSCK,  hwAttrs->pinSCK,  GPIO_DIR_MODE_HW);
-    GPIODirModeSet(hwAttrs->portMISO, hwAttrs->pinMISO, GPIO_DIR_MODE_HW);
-    GPIODirModeSet(hwAttrs->portMOSI, hwAttrs->pinMOSI, GPIO_DIR_MODE_HW);
+
+    IOCPinTypeSsiMaster(hwAttrs->baseAddr,
+                        hwAttrs->pinMISO,
+                        hwAttrs->pinMOSI,
+                        hwAttrs->pinCS,
+                        hwAttrs->pinSCK);  //???
+   
 
     /* Pin used for Chip Select */
-    GPIOPinTypeGPIOOutput(hwAttrs->portCS, hwAttrs->pinCS);
+    IOCPinTypeGpioOutput(hwAttrs->pinCS);   //????
 
     /* Raise the chip select pin */
-    GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, hwAttrs->pinCS);
+    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
+    /* Register power dependency - i.e. power up and enable clock for SPI. */
+    Power_setDependency(hwAttrs->powerMngrId);
+
 
     /*
      * Configure the SPI bus to 400 kHz as required per SD specs. This frequency
@@ -1048,11 +1079,7 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
      * Register the filesystem with FatFs. This operation does not access the
      * SDCard yet.
      */
-    path[0] = '0' + object->driveNumber;
-    path[1] = ':';
-    path[2] = '\0';
-
-    fresult = f_mount(&(object->filesystem), path, 0);
+    fresult = f_mount(object->driveNumber, &(object->filesystem));
     if (fresult != FR_OK) {
         Log_error2("SDSPI:(%p) drive %d not mounted",
                     hwAttrs->baseAddr, object->driveNumber);
