@@ -58,9 +58,11 @@ extern "C" {
 
 #include <stdint.h>
 #include <ti/drivers/SDSPI.h>
-
 #include <ti/mw/fatfs/ff.h>
 #include <ti/mw/fatfs/diskio.h>
+#include <ti/drivers/PIN.h>
+#include <ti/sysbios/family/arm/cc26xx/Power.h>
+#include <ti/sysbios/family/arm/cc26xx/PowerCC2650.h>
 
 /**
  *  @addtogroup SDSPI_STATUS
@@ -106,10 +108,10 @@ extern const SDSPI_FxnTable SDSPICC26XX_fxnTable;
  *  @brief  SD Card type inserted
  */
 typedef enum SDSPICC26XX_CardType {
-    SDSPICC26XX_NOCARD = 0, /*!< Unrecognized Card */
-    SDSPICC26XX_MMC = 1,    /*!< Multi-media Memory Card (MMC) */
-    SDSPICC26XX_SDSC = 2,   /*!< Standard SDCard (SDSC) */
-    SDSPICC26XX_SDHC = 3    /*!< High Capacity SDCard (SDHC) */
+    NOCARD = 0, /*!< Unrecognized Card */
+    MMC = 1,    /*!< Multi-media Memory Card (MMC) */
+    SDSC = 2,   /*!< Standard SDCard (SDSC) */
+    SDHC = 3    /*!< High Capacity SDCard (SDHC) */
 } SDSPICC26XX_CardType;
 
 /*!
@@ -161,23 +163,17 @@ typedef struct SDSPICC26XX_HWAttrs {
     /*!< SSI Peripheral's base address */
     SDSPIBaseAddrType baseAddr;
 
-    /*!< SSI port SCK */
-    uint32_t portSCK;
+    /*! SPI Peripheral's power manager ID */
+    Power_Resource   powerMngrId;
     /*!< SSI SCK pin */
     uint32_t pinSCK;
 
-    /*!< SSI port MISO */
-    uint32_t portMISO;
     /*!< SSI MISO pin */
     uint32_t pinMISO;
 
-    /*!< SSI port MOSI */
-    uint32_t portMOSI;
     /*!< SSI MOSI pin */
     uint32_t pinMOSI;
 
-    /*!< GPIO Port used for the chip select */
-    uint32_t portCS;
     /*!< GPIO Pin used for the chip select */
     uint32_t pinCS;
 } SDSPICC26XX_HWAttrs;
