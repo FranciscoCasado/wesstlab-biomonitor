@@ -43,8 +43,6 @@
 #include <xdc/runtime/Types.h>
 #include <xdc/runtime/Timestamp.h>
 #include <xdc/runtime/System.h>
-#include <ti/sysbios/family/arm/cc26xx/Power.h>
-#include <ti/sysbios/family/arm/cc26xx/PowerCC26XX.h>
 
 #include <ti/sysbios/BIOS.h>
 #include <ti/sysbios/family/arm/m3/Hwi.h>
@@ -52,6 +50,8 @@
 #include "SDSPICC26XX.h"
 #include <ti/drivers/pin/PINCC26XX.h>
 #include <ti/drivers/SDSPI.h>
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
 
 /* driverlib header files */
 #include <inc/hw_memmap.h>
@@ -62,7 +62,6 @@
 #include <driverlib/ioc.h>
 #include <driverlib/prcm.h>
 #include <driverlib/rom.h>
-#include <PINCC26XX.h>
 #include "Board.h"
 /* Definitions for MMC/SDC command */
 #define CMD0                        (0x40+0)    /* GO_IDLE_STATE */
@@ -793,7 +792,7 @@ DRESULT SDSPICC26XX_diskIOctrl(BYTE drv, BYTE ctrl, void *buf)
  *  @param  count       Sector count (1...255)
  */
 DRESULT SDSPICC26XX_diskRead(BYTE drv, BYTE *buf,
-                           DWORD sector, BYTE count)
+                           DWORD sector, UINT count)
 {
     SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
     SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;
@@ -891,7 +890,7 @@ DSTATUS SDSPICC26XX_diskStatus(BYTE drv)
  *  @param  count       Sector count (1...255)
  */
 DRESULT SDSPICC26XX_diskWrite(BYTE drv, const BYTE *buf,
-                            DWORD sector, BYTE count)
+                            DWORD sector, UINT count)
 {
     SDSPICC26XX_Object          *object = sdspiHandles[drv]->object;
     SDSPICC26XX_HWAttrs const   *hwAttrs = sdspiHandles[drv]->hwAttrs;

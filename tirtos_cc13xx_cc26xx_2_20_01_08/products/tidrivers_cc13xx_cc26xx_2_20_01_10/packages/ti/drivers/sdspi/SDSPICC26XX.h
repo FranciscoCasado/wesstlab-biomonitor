@@ -61,8 +61,8 @@ extern "C" {
 #include <ti/mw/fatfs/ff.h>
 #include <ti/mw/fatfs/diskio.h>
 #include <ti/drivers/PIN.h>
-#include <ti/sysbios/family/arm/cc26xx/Power.h>
-#include <ti/sysbios/family/arm/cc26xx/PowerCC2650.h>
+#include <ti/drivers/Power.h>
+#include <ti/drivers/power/PowerCC26XX.h>
 
 /**
  *  @addtogroup SDSPI_STATUS

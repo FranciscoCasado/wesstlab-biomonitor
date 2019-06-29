@@ -263,17 +263,17 @@ const UDMACC26XX_Config UDMACC26XX_config[] = {
 /* Place into subsections to allow the TI linker to remove items properly */
 #if defined(__TI_COMPILER_VERSION__)
 #pragma DATA_SECTION(SPI_config, ".const:SPI_config")
-#pragma DATA_SECTION(spiCC26XXDMAHWAttrs, ".const:spiCC26XXDMAHWAttrs")
+#pragma DATA_SECTION(spiCC26XXHWAttrs, ".const:spiCC26XXHWAttrs")
 #endif
 
 /* Include drivers */
-#include <ti/drivers/spi/SPICC26XXDMA.h>
+#include <ti/drivers/spi/SPICC26XX.h>
 
 /* SPI objects */
-SPICC26XXDMA_Object spiCC26XXDMAObjects[CC2650STK_SPICOUNT];
+SPICC26XX_Object spiCC26XXObjects[CC2650STK_SPICOUNT];
 
 /* SPI configuration structure, describing which pins are to be used */
-const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC2650STK_SPICOUNT] = {
+const SPICC26XX_HWAttrsV1 spiCC26XXHWAttrs[CC2650STK_SPICOUNT] = {
     {
         .baseAddr           = SSI0_BASE,
         .intNum             = INT_SSI0_COMB,
@@ -307,14 +307,14 @@ const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC2650STK_SPICOUNT] = {
 /* SPI configuration structure */
 const SPI_Config SPI_config[] = {
     {
-         .fxnTablePtr = &SPICC26XXDMA_fxnTable,
-         .object      = &spiCC26XXDMAObjects[0],
-         .hwAttrs     = &spiCC26XXDMAHWAttrs[0]
+         .fxnTablePtr = &SPICC26XX_fxnTable,
+         .object      = &spiCC26XXObjects[0],
+         .hwAttrs     = &spiCC26XXHWAttrs[0]
     },
     {
-         .fxnTablePtr = &SPICC26XXDMA_fxnTable,
-         .object      = &spiCC26XXDMAObjects[1],
-         .hwAttrs     = &spiCC26XXDMAHWAttrs[1]
+         .fxnTablePtr = &SPICC26XX_fxnTable,
+         .object      = &spiCC26XXObjects[1],
+         .hwAttrs     = &spiCC26XXHWAttrs[1]
     },
     {NULL, NULL, NULL}
 };
@@ -328,17 +328,17 @@ const SPI_Config SPI_config[] = {
 /* Place into subsections to allow the TI linker to remove items properly */
 #if defined(__TI_COMPILER_VERSION__)
 #pragma DATA_SECTION(SPI_config, ".const:SPI_config")
-#pragma DATA_SECTION(spiCC26XXDMAHWAttrs, ".const:spiCC26XXDMAHWAttrs")
+#pragma DATA_SECTION(spiCC26XXHWAttrs, ".const:spiCC26XXHWAttrs")
 #endif
 
 /* Include drivers */
-#include "SDSPICC26XXDMA.h"
+#include "SDSPICC26XX.h"
 
 /* SDSPI objects */
-SDSPICC26XXDMA_Object sdspiCC26XXDMAObjects[CC2650STK_SPICOUNT];
+SDSPICC26XX_Object sdspiCC26XXObjects[CC2650STK_SPICOUNT];
 
 /* SDSPI configuration structure, describing which pins are to be used */
-const SDSPICC26XXDMA_HWAttrsV1 sdspiCC26XXDMAHWAttrs[CC2650STK_SDSPICOUNT] = {
+const SDSPICC26XX_HWAttrsV1 sdspiCC26XXHWAttrs[CC2650STK_SDSPICOUNT] = {
     {
         .baseAddr           = SSI0_BASE,
         .intNum             = INT_SSI0_COMB,
@@ -358,9 +358,9 @@ const SDSPICC26XXDMA_HWAttrsV1 sdspiCC26XXDMAHWAttrs[CC2650STK_SDSPICOUNT] = {
 /* SDSPI configuration structure */
 const SDSPI_Config SDSPI_config[] = {
     {
-         .fxnTablePtr = &SDSPICC26XXDMA_fxnTable,
-         .object      = &sdspiCC26XXDMAObjects[0],
-         .hwAttrs     = &sdspiCC26XXDMAHWAttrs[0]
+         .fxnTablePtr = &SDSPICC26XX_fxnTable,
+         .object      = &sdspiCC26XXObjects[0],
+         .hwAttrs     = &sdspiCC26XXHWAttrs[0]
     },
     {NULL, NULL, NULL}
 };
