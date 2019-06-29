@@ -262,6 +262,11 @@
 			<locationURI>virtual:/virtual</locationURI>
 		</link>
 		<link>
+			<name>Drivers/POWER</name>
+			<type>2</type>
+			<locationURI>virtual:/virtual</locationURI>
+		</link>
+		<link>
 			<name>Drivers/RF</name>
 			<type>2</type>
 			<locationURI>virtual:/virtual</locationURI>
@@ -632,6 +637,16 @@
 			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/pin/PINCC26XX.h</locationURI>
 		</link>
 		<link>
+			<name>Drivers/POWER/PowerCC26XX.c</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/tirtos_cc13xx_cc26xx_2_20_01_08/products/tidrivers_cc13xx_cc26xx_2_20_01_10/packages/ti/drivers/power/PowerCC26XX.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/POWER/PowerCC26XX.h</name>
+			<type>1</type>
+			<locationURI>PARENT-1-PROJECT_LOC/tirtos_cc13xx_cc26xx_2_20_01_08/products/tidrivers_cc13xx_cc26xx_2_20_01_10/packages/ti/drivers/power/PowerCC26XX.h</locationURI>
+		</link>
+		<link>
 			<name>Drivers/RF/RF.h</name>
 			<type>1</type>
 			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/rf/RF.h</locationURI>
@@ -640,6 +655,16 @@
 			<name>Drivers/RF/RFCC26XX_singleMode.c</name>
 			<type>1</type>
 			<locationURI>TI_RTOS_DRIVERS_BASE/ti/drivers/rf/RFCC26XX_singleMode.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/SPI/SDSPICC26XX.c</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/tirtos_cc13xx_cc26xx_2_20_01_08/products/tidrivers_cc13xx_cc26xx_2_20_01_10/packages/ti/drivers/sdspi/SDSPICC26XX.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/SPI/SDSPICC26XX.h</name>
+			<type>1</type>
+			<locationURI>WORKSPACE_LOC/tirtos_cc13xx_cc26xx_2_20_01_08/products/tidrivers_cc13xx_cc26xx_2_20_01_10/packages/ti/drivers/sdspi/SDSPICC26XX.h</locationURI>
 		</link>
 		<link>
 			<name>Drivers/SPI/SPI.c</name>
