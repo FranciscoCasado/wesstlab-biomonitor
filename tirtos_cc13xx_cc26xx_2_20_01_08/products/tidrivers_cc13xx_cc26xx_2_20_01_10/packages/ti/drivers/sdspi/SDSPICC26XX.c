@@ -212,7 +212,7 @@ static inline uint8_t rxSPI(SDSPICC26XX_HWAttrs const *hwAttrs)
     SSIDataPut(hwAttrs->baseAddr, 0xFF);
 
     /* read data frm rx fifo */
-    SSIDataGet(hwAttrs->baseAddr, &rcvdat);
+    SSIDataGet(hwAttrs->baseAddr, (void *)&rcvdat);
 
     return ((uint8_t)rcvdat);
 }
@@ -307,7 +307,7 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
         SSIDataPut(hwAttrs->baseAddr, 0xFF);
 
         /* Flush data read during data write. */
-        SSIDataGet(hwAttrs->baseAddr, &dat);
+        SSIDataGet(hwAttrs->baseAddr, (void*)&dat);
         //rxSPI(hwAttrs);
     }
 
@@ -347,7 +347,7 @@ static inline void txSPI(SDSPICC26XX_HWAttrs const *hwAttrs, uint8_t dat)
     SSIDataPut(hwAttrs->baseAddr, dat);
 
     /* flush data read during the write */
-    SSIDataGet(hwAttrs->baseAddr, &rcvdat);
+    SSIDataGet(hwAttrs->baseAddr, (void*)&rcvdat);
 }
 
 /*
@@ -459,7 +459,7 @@ void SDSPICC26XX_close(SDSPI_Handle handle)
     SDSPICC26XX_HWAttrs const   *hwAttrs = handle->hwAttrs;
 
     /* Unmount the FatFs drive */
-    fresult = f_mount(object->driveNumber, NULL);
+    fresult = f_mount(NULL, object->path, NULL);
     if (fresult != FR_OK) {
         Log_print2(Diags_USER1,
                    "SDSPI:(%p) Could not unmount FatFs volume @ drive number %d",
@@ -511,7 +511,6 @@ int SDSPICC26XX_control(SDSPI_Handle handle, unsigned int cmd, void *arg)
  */
 DSTATUS SDSPICC26XX_diskInitialize(BYTE drv)
 {
-   static uint8_t temp;
     uint8_t                    n;
     uint8_t                    ocr[4];
     SDSPICC26XX_CardType         cardType;
@@ -1078,7 +1077,7 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
      * Register the filesystem with FatFs. This operation does not access the
      * SDCard yet.
      */
-    fresult = f_mount(object->driveNumber, &(object->filesystem));
+    fresult = f_mount(&(object->filesystem), object->path, 0);
     if (fresult != FR_OK) {
         Log_error2("SDSPI:(%p) drive %d not mounted",
                     hwAttrs->baseAddr, object->driveNumber);

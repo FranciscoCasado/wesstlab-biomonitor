@@ -56,6 +56,8 @@
 extern "C" {
 #endif
 
+#define UNICODE
+
 #include <stdint.h>
 #include <ti/drivers/SDSPI.h>
 #include <ti/mw/fatfs/ff.h>
@@ -164,7 +166,7 @@ typedef struct SDSPICC26XX_HWAttrs {
     SDSPIBaseAddrType baseAddr;
 
     /*! SPI Peripheral's power manager ID */
-    Power_Resource   powerMngrId;
+    PowerCC26XX_Resource   powerMngrId;
     /*!< SSI SCK pin */
     uint32_t pinSCK;
 
@@ -184,11 +186,12 @@ typedef struct SDSPICC26XX_HWAttrs {
  *  The application must not access any member variables of this structure!
  */
 typedef struct SDSPICC26XX_Object {
-    uint32_t            driveNumber;   /*!< Drive number used by FatFs */
-    DSTATUS             diskState;     /*!< Disk status */
-    SDSPICC26XX_CardType  cardType;      /*!< SDCard Card Command Class (CCC) */
-    uint32_t            bitRate;       /*!< SPI bus bit rate (Hz) */
-    FATFS               filesystem;    /*!< FATFS data object */
+    uint32_t                driveNumber;   /*!< Drive number used by FatFs */
+    DSTATUS                 diskState;     /*!< Disk status */
+    SDSPICC26XX_CardType    cardType;      /*!< SDCard Card Command Class (CCC) */
+    uint32_t                bitRate;       /*!< SPI bus bit rate (Hz) */
+    FATFS                   filesystem;    /*!< FATFS data object */
+    TCHAR*                  path;          /*!< Path string used by FatFs */
 } SDSPICC26XX_Object, *SDSPICC26XX_Handle;
 
 #ifdef __cplusplus

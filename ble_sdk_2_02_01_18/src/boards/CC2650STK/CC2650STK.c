@@ -267,13 +267,13 @@ const UDMACC26XX_Config UDMACC26XX_config[] = {
 #endif
 
 /* Include drivers */
-#include <ti/drivers/spi/SPICC26XX.h>
+#include <ti/drivers/spi/SPICC26XXDMA.h>
 
 /* SPI objects */
-SPICC26XX_Object spiCC26XXObjects[CC2650STK_SPICOUNT];
+SPICC26XXDMA_Object spiCC26XXDMAObjects[CC2650STK_SPICOUNT];
 
 /* SPI configuration structure, describing which pins are to be used */
-const SPICC26XX_HWAttrsV1 spiCC26XXHWAttrs[CC2650STK_SPICOUNT] = {
+const SPICC26XXDMA_HWAttrsV1 spiCC26XXDMAHWAttrs[CC2650STK_SPICOUNT] = {
     {
         .baseAddr           = SSI0_BASE,
         .intNum             = INT_SSI0_COMB,
@@ -307,14 +307,14 @@ const SPICC26XX_HWAttrsV1 spiCC26XXHWAttrs[CC2650STK_SPICOUNT] = {
 /* SPI configuration structure */
 const SPI_Config SPI_config[] = {
     {
-         .fxnTablePtr = &SPICC26XX_fxnTable,
-         .object      = &spiCC26XXObjects[0],
-         .hwAttrs     = &spiCC26XXHWAttrs[0]
+         .fxnTablePtr = &SPICC26XXDMA_fxnTable,
+         .object      = &spiCC26XXDMAObjects[0],
+         .hwAttrs     = &spiCC26XXDMAHWAttrs[0]
     },
     {
-         .fxnTablePtr = &SPICC26XX_fxnTable,
-         .object      = &spiCC26XXObjects[1],
-         .hwAttrs     = &spiCC26XXHWAttrs[1]
+         .fxnTablePtr = &SPICC26XXDMA_fxnTable,
+         .object      = &spiCC26XXDMAObjects[1],
+         .hwAttrs     = &spiCC26XXDMAHWAttrs[1]
     },
     {NULL, NULL, NULL}
 };
@@ -332,27 +332,31 @@ const SPI_Config SPI_config[] = {
 #endif
 
 /* Include drivers */
-#include "SDSPICC26XX.h"
+#include <SDSPICC26XX.h>
 
 /* SDSPI objects */
 SDSPICC26XX_Object sdspiCC26XXObjects[CC2650STK_SPICOUNT];
 
 /* SDSPI configuration structure, describing which pins are to be used */
-const SDSPICC26XX_HWAttrsV1 sdspiCC26XXHWAttrs[CC2650STK_SDSPICOUNT] = {
-    {
-        .baseAddr           = SSI0_BASE,
-        .intNum             = INT_SSI0_COMB,
-        .intPriority        = ~0,
-        .swiPriority        = 0,
-        .powerMngrId        = PowerCC26XX_PERIPH_SSI0,
-        .defaultTxBufValue  = 0,
-        .rxChannelBitMask   = 1<<UDMA_CHAN_SSI0_RX,
-        .txChannelBitMask   = 1<<UDMA_CHAN_SSI0_TX,
-        .mosiPin            = Board_SPI0_MOSI,
-        .misoPin            = Board_SPI0_MISO,
-        .clkPin             = Board_SPI0_CLK,
-        .csnPin             = Board_SPI0_CSN
-    },
+const SDSPICC26XX_HWAttrs sdspiCC26XXHWAttrs[CC2650STK_SPICOUNT] = {
+  {/* SRF06EB_CC2650_SPI0 */
+    .baseAddr=SSI0_BASE,
+
+    /*! SPI Peripheral's power manager ID */
+    .powerMngrId = PowerCC26XX_PERIPH_SSI0,
+
+    /*!< SSI SCK pin */
+    .pinSCK=Board_SPI0_CLK,
+
+    /*!< SSI MISO pin */
+    .pinMISO=Board_SPI0_MISO,
+
+    /*!< SSI MOSI pin */
+    .pinMOSI=Board_SPI0_MOSI,
+
+    /*!< GPIO Pin used for the chip select */
+    .pinCS=Board_SPI0_CSN
+    }
 };
 
 /* SDSPI configuration structure */
