@@ -202,6 +202,11 @@ typedef struct
 uint8 senflag[10];
 uint32 ticks;
 
+
+/* Pin driver handles */
+static PIN_State newPinState;
+ PIN_Handle ledPinHandle;
+
 // Profile state and parameters
 gaprole_States_t gapProfileState = GAPROLE_INIT;
 
@@ -555,8 +560,7 @@ static void SensorTag_init(void)
   senflag[5]++;
 
   // Init SDCard
-
-  //SDSPI_init();
+  SDSPI_init();
 
   // Power on self-test for sensors, flash and DevPack
   selfTestMap = SensorTag_testExecute(ST_TEST_MAP);

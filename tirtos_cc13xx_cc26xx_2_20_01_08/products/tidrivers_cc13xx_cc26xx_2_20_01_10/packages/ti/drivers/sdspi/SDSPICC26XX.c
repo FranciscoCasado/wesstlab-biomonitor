@@ -193,9 +193,8 @@ static uint32_t rcvr_datablock(SDSPICC26XX_HWAttrs const *hwAttrs,
 static inline void releaseSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     /* Deselect the SD card. */
-    IOCPinTypeGpioOutput( hwAttrs->pinCS);
-    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
-    //GPIOPinWrite(hwAttrs->portCS, hwAttrs->pinCS, hwAttrs->pinCS);
+    //IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    //PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
 }
 
 /*
@@ -289,7 +288,7 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
     SDSPIDataType   dat;
 
     /* Deselect the SD card. */
-    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
+    //PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
 
     /* Switch the SPI TX line to a GPIO and drive it high too. */
     IOCPinTypeGpioOutput( hwAttrs->pinMOSI);//????
@@ -327,8 +326,8 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
 static inline void takeSPIBus(SDSPICC26XX_HWAttrs const *hwAttrs)
 {
     /* Select the SD card. */
-    IOCPinTypeGpioOutput( hwAttrs->pinCS);
-    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 0);
+    //IOCPinTypeGpioOutput( hwAttrs->pinCS);
+    //PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 0);
     }
 
 /*
@@ -1035,10 +1034,10 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
    
 
     /* Pin used for Chip Select */
-    IOCPinTypeGpioOutput(hwAttrs->pinCS);   //????
+    //IOCPinTypeGpioOutput(hwAttrs->pinCS);   //????
 
     /* Raise the chip select pin */
-    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
+    //PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
     /* Register power dependency - i.e. power up and enable clock for SPI. */
     Power_setDependency(hwAttrs->powerMngrId);
 
