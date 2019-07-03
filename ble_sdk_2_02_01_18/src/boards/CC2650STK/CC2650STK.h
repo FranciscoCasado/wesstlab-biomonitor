@@ -393,6 +393,8 @@ extern const PIN_Config BoardGpioInitTable[];
 /* Generic SPI instance identifiers */
 #define Board_SPI0                  CC2650STK_SPI0
 #define Board_SPI1                  CC2650STK_SPI1
+/* Generic SDSPI instance identifiers */
+#define Board_SDSPI0                  CC2650STK_SDSPI0
 /* Generic UART instance identifiers */
 #define Board_UART                  CC2650STK_UART0
 /* Generic Crypto instance identifiers */

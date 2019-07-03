@@ -327,8 +327,8 @@ const SPI_Config SPI_config[] = {
  */
 /* Place into subsections to allow the TI linker to remove items properly */
 #if defined(__TI_COMPILER_VERSION__)
-#pragma DATA_SECTION(SPI_config, ".const:SPI_config")
-#pragma DATA_SECTION(spiCC26XXHWAttrs, ".const:spiCC26XXHWAttrs")
+#pragma DATA_SECTION(SDSPI_config, ".const:SDSPI_config")
+#pragma DATA_SECTION(sdspiCC26XXHWAttrs, ".const:sdspiCC26XXHWAttrs")
 #endif
 
 /* Include drivers */

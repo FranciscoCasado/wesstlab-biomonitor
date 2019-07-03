@@ -66,6 +66,7 @@ extern "C" {
 #define     Board_initPWM()         PWM_init()
 #define     Board_initI2C()         I2C_init()
 #define     Board_initSPI()         SPI_init()
+#define     Board_initSDSPI()       SDSPI_init()
 #define     Board_initUART()        UART_init()
 #define     Board_initWatchdog()    Watchdog_init()
 #define     GPIO_toggle(n)

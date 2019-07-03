@@ -43,11 +43,7 @@ static int SDSPI_count = -1;
 
 /* Default SDSPI parameters structure */
 const SDSPI_Params SDSPI_defaultParams = {
-#if defined(MSP430WARE) || defined(MSP432WARE)
-    2500000,         /* bitRate */
-#else
-    12500000,        /* bitRate */
-#endif
+    4000000,        /* bitRate */
     (uintptr_t) NULL /* custom */
 };
 
@@ -108,8 +104,7 @@ SDSPI_Handle SDSPI_open(unsigned int index, unsigned char drv,
  *
  *  Defaults values are:
  *  @code
- *  bitRate             = 12500000 (Hz) //Tiva
- *  bitRate             = 2500000  (Hz) //MSP430
+ *  bitRate             = 4000000 (Hz)
  *  @endcode
  *
  *  @param  params  Parameter structure to initialize

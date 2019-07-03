@@ -49,6 +49,7 @@
  */
 #include <string.h>
 #include <xdc/std.h>
+#include <stdio.h>
 
 #include <xdc/runtime/System.h>
 #include <ti/sysbios/BIOS.h>
@@ -57,6 +58,7 @@
 #include <ti/sysbios/knl/Queue.h>
 #include <ti/sysbios/knl/Task.h>
 #include <ti/drivers/SDSPI.h>
+#include "SDSPICC26XX.h"
 
 #include <ICall.h>
 
@@ -560,7 +562,44 @@ static void SensorTag_init(void)
   senflag[5]++;
 
   // Init SDCard
-  SDSPI_init();
+  Board_initSDSPI();
+  senflag[9]++;
+
+#define SD_DRIVE_NUM 0
+  SDSPI_Handle sdspiHandle;
+  SDSPI_Params sdspiParams;
+  FIL *src;
+  uint32 bw;
+  char str[] = "HELLO SD WORLD";
+
+  const char outputfilesd[] = "fat:0:output.txt";
+
+  //SDSPI_Params_init(&sdspiParams);
+  senflag[9]++;
+  sdspiHandle = SDSPI_open(0, SD_DRIVE_NUM, &sdspiParams);
+
+  /*
+  if (sdspiHandle == NULL) {
+      System_abort("Error starting the SD card\n");
+  }
+  else {
+      System_printf("Drive %u is mounted\n", SD_DRIVE_NUM);
+  }
+  */
+
+
+  senflag[9]++;
+  //src = fopen(outputfilesd, "a");
+  f_open(src, "0:output.txt", FA_CREATE_ALWAYS | FA_WRITE);
+
+  //senflag[9]++;
+  f_write(src,str,sizeof(str),&bw);
+
+  senflag[9]++;
+  f_close(src);
+
+
+
 
   // Power on self-test for sensors, flash and DevPack
   selfTestMap = SensorTag_testExecute(ST_TEST_MAP);
