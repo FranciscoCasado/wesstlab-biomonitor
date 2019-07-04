@@ -568,15 +568,16 @@ static void SensorTag_init(void)
 #define SD_DRIVE_NUM 0
   SDSPI_Handle sdspiHandle;
   SDSPI_Params sdspiParams;
-  FIL *src;
-  uint32 bw;
+  FIL * src;
+  UINT bw = 0;
+  volatile FRESULT fr;
   char str[] = "HELLO SD WORLD";
 
   const char outputfilesd[] = "fat:0:output.txt";
 
   //SDSPI_Params_init(&sdspiParams);
   senflag[9]++;
-  sdspiHandle = SDSPI_open(0, SD_DRIVE_NUM, &sdspiParams);
+  sdspiHandle = SDSPICC26XX_open(0, SD_DRIVE_NUM, &sdspiParams);
 
   /*
   if (sdspiHandle == NULL) {
@@ -590,10 +591,10 @@ static void SensorTag_init(void)
 
   senflag[9]++;
   //src = fopen(outputfilesd, "a");
-  f_open(src, "0:output.txt", FA_CREATE_ALWAYS | FA_WRITE);
+  fr = f_open(src, "0:output.txt", FA_CREATE_ALWAYS | FA_WRITE);
 
   //senflag[9]++;
-  f_write(src,str,sizeof(str),&bw);
+  fr = f_write(src,str,sizeof(str),&bw);
 
   senflag[9]++;
   f_close(src);
