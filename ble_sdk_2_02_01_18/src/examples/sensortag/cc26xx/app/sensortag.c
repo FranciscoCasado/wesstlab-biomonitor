@@ -450,6 +450,39 @@ static void SensorTag_init(void)
 {
     senflag[5]++;
 
+    /* ========== SD CARD ========== */
+    #define SD_DRIVE_NUM 0
+      SDSPI_Handle sdspiHandle;
+      SDSPI_Params sdspiParams;
+      FIL * src;
+      UINT bw = 0;
+      volatile FRESULT fr;
+      char str[] = "HELLO SD WORLD";
+
+      Board_initSDSPI();    // Calls SDSPI_init, which calls SDSPICC26XX_init for given SDSPI object
+
+      senflag[9]++;
+      SDSPI_Params_init(&sdspiParams);
+      sdspiHandle = SDSPI_open(0, SD_DRIVE_NUM, &sdspiParams);
+
+      if (sdspiHandle == NULL) {
+          System_abort("Error starting the SD card\n");
+      }
+      else {
+          System_printf("Drive %u is mounted\n", SD_DRIVE_NUM);
+      }
+
+      senflag[9]++;
+      //src = fopen(outputfilesd, "a");
+      fr = f_open(src, "0:output.txt", FA_CREATE_ALWAYS | FA_WRITE);
+
+      //senflag[9]++;
+      fr = f_write(src,str,sizeof(str),&bw);
+
+      senflag[9]++;
+      f_close(src);
+
+
 
   // Setup I2C for sensors
   SensorI2C_open();
@@ -560,44 +593,6 @@ static void SensorTag_init(void)
   // Add battery monitor
   SensorTagBatt_init();
   senflag[5]++;
-
-  // Init SDCard
-  Board_initSDSPI();
-  senflag[9]++;
-
-#define SD_DRIVE_NUM 0
-  SDSPI_Handle sdspiHandle;
-  SDSPI_Params sdspiParams;
-  FIL * src;
-  UINT bw = 0;
-  volatile FRESULT fr;
-  char str[] = "HELLO SD WORLD";
-
-  const char outputfilesd[] = "fat:0:output.txt";
-
-  //SDSPI_Params_init(&sdspiParams);
-  senflag[9]++;
-  sdspiHandle = SDSPICC26XX_open(0, SD_DRIVE_NUM, &sdspiParams);
-
-  /*
-  if (sdspiHandle == NULL) {
-      System_abort("Error starting the SD card\n");
-  }
-  else {
-      System_printf("Drive %u is mounted\n", SD_DRIVE_NUM);
-  }
-  */
-
-
-  senflag[9]++;
-  //src = fopen(outputfilesd, "a");
-  fr = f_open(src, "0:output.txt", FA_CREATE_ALWAYS | FA_WRITE);
-
-  //senflag[9]++;
-  fr = f_write(src,str,sizeof(str),&bw);
-
-  senflag[9]++;
-  f_close(src);
 
 
 

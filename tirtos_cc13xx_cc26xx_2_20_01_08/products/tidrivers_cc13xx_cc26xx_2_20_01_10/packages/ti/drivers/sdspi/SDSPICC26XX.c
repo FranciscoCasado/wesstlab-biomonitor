@@ -36,6 +36,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 #include <xdc/runtime/Assert.h>
 #include <xdc/runtime/Diags.h>
@@ -288,7 +289,7 @@ static void send_initial_clock_train(SDSPICC26XX_HWAttrs const *hwAttrs)
     SDSPIDataType   dat;
 
     /* Deselect the SD card. */
-    //PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 1);
+    PIN_setOutputValue(ledPinHandle, hwAttrs->pinCS, 0);    // Remember that this pin has inverted logic
 
     /* Switch the SPI TX line to a GPIO and drive it high too. */
     IOCPinTypeGpioOutput( hwAttrs->pinMOSI);//????
@@ -994,8 +995,8 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
                             unsigned char drv,
                             SDSPI_Params *params)
 {
-    DRESULT                   dresult;
-    FRESULT                   fresult;
+    volatile DRESULT                   dresult;
+    volatile FRESULT                   fresult;
     unsigned int              key;
     Types_FreqHz              freq;
     SDSPICC26XX_Object         *object = handle->object;
@@ -1076,7 +1077,7 @@ SDSPI_Handle SDSPICC26XX_open(SDSPI_Handle handle,
      * Register the filesystem with FatFs. This operation does not access the
      * SDCard yet.
      */
-    fresult = f_mount(&(object->filesystem), object->path, 0);
+    fresult = f_mount(&(object->filesystem), "0", 0);
     if (fresult != FR_OK) {
         Log_error2("SDSPI:(%p) drive %d not mounted",
                     hwAttrs->baseAddr, object->driveNumber);
