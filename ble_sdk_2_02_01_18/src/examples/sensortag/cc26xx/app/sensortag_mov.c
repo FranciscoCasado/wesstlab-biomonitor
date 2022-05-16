@@ -64,7 +64,7 @@
 #include "board.h"
 #include "movementservice.h"
 #include "sensortag_mov.h"
-#include "SensorMpu9250.h"
+#include "SensorIcm20948.h"
 #include "SensorTagTest.h"
 #include "SensorUtil.h"
 #include "util.h"
@@ -99,7 +99,7 @@
 #define GYR_SHAKE_THR             10.0
 #define WOM_THR                   10
 
-// Configuration bit-masks (bits 0-6 defined in sensor_mpu9250.h)
+// Configuration bit-masks (bits 0-6 defined in sensor_Icm20948.h)
 #define MOV_WOM_ENABLE            0x0080
 #define MOV_MASK_WOM_THRESHOLD    0x3C00 // TBD
 #define MOV_MASK_INACT_TIMEOUT    0xC000 // TBD
@@ -249,10 +249,10 @@ void SensorTagMov_init(void)
      appState = APP_STATE_OFF;
      nMotions = 0;
 
-     if (SensorMpu9250_init())
+     if (SensorIcm20948_init())
      {
        SensorTagMov_reset();
-      // SensorMpu9250_registerCallback(SensorTagMov_processInterrupt);
+      // SensorIcm20948_registerCallback(SensorTagMov_processInterrupt);
      }
 
      // Initialize characteristics
@@ -283,10 +283,10 @@ void SensorTagMov_init(void)
        appState = APP_STATE_OFF;
        nMotions = 0;
 
-       if (SensorMpu9250_init())
+       if (SensorIcm20948_init())
        {
          SensorTagMov_reset();
-        // SensorMpu9250_registerCallback(SensorTagMov_processInterrupt);
+        // SensorIcm20948_registerCallback(SensorTagMov_processInterrupt);
        }
 
        // Initialize characteristics
@@ -322,7 +322,7 @@ if (sensorReadScheduled){
 
     if ((axes != ST_CFG_SENSOR_DISABLE) && (axes != ST_CFG_ERROR)) {
       // Get interrupt status (clears interrupt)
-      mpuIntStatus = SensorMpu9250_irqStatus();
+      mpuIntStatus = SensorIcm20948_irqStatus();
 
       // Process gyro and accelerometer
       if (mpuDataRdy || appState == APP_STATE_ACTIVE) {
@@ -338,10 +338,10 @@ if (sensorReadScheduled){
         else if (mpuIntStatus & MPU_DATA_READY)
         {
           // Read gyro data
-          SensorMpu9250_gyroRead((uint16_t*)sensorData);
+          SensorIcm20948_gyroRead((uint16_t*)sensorData);
 
           // Read accelerometer data
-          SensorMpu9250_accRead((uint16_t*)&sensorData[6]);
+          SensorIcm20948_accRead((uint16_t*)&sensorData[6]);
           mov_flag[0]++;
 
           // What is this for???
@@ -360,7 +360,7 @@ if (sensorReadScheduled){
         {
           uint8_t status;
 
-          status = SensorMpu9250_magRead((int16_t*)&sensorData[12]);
+          status = SensorIcm20948_magRead((int16_t*)&sensorData[12]);
 
           // Always measure magnetometer (not interrupt driven)
           if (status == MAG_BYPASS_FAIL)
@@ -371,7 +371,7 @@ if (sensorReadScheduled){
           }
           else if (status != MAG_STATUS_OK)
           {
-            SensorMpu9250_magReset();
+            SensorIcm20948_magReset();
           }
         }
 
@@ -387,9 +387,9 @@ if (sensorReadScheduled){
           // Transition to active state
           appState = APP_STATE_ACTIVE;
           nMotions = 0;
-          if (SensorMpu9250_reset())
+          if (SensorIcm20948_reset())
           {
-            SensorMpu9250_enable(axes);
+            SensorIcm20948_enable(axes);
           }
         }
 
@@ -408,9 +408,9 @@ if (sensorReadScheduled){
           // Transition from active to idle state
           nMotions = 0;
           appState = APP_STATE_IDLE;
-          if (SensorMpu9250_reset())
+          if (SensorIcm20948_reset())
           {
-            SensorMpu9250_enableWom(movThreshold);
+            SensorIcm20948_enableWom(movThreshold);
           }
         }
       }
@@ -518,9 +518,9 @@ void SensorTagMov_processCharChangeEvt(uint8_t paramID)
           mpuConfig = newCfg;
           appStateSet(APP_STATE_ACTIVE);
 
-          if (SensorMpu9250_powerIsOn()){
+          if (SensorIcm20948_powerIsOn()){
               DELAY_MS(25);
-              mpuConfig = newCfg | (SensorMpu9250_accReadRange() << 8);
+              mpuConfig = newCfg | (SensorIcm20948_accReadRange() << 8);
             //}
          }
 
@@ -602,11 +602,11 @@ static void sensorTaskFxn(UArg a0, UArg a1){
 
          //if(mpuDataRdy){}
          // Get interrupt status (clears interrupt)
-         //mpuIntStatus = SensorMpu9250_irqStatus();
+         //mpuIntStatus = SensorIcm20948_irqStatus();
 
          // Read accelerometer and gyro data
-         SensorMpu9250_gyroRead((uint16_t*)sensorData);
-         SensorMpu9250_accRead((uint16_t*)&sensorData[6]);
+         SensorIcm20948_gyroRead((uint16_t*)sensorData);
+         SensorIcm20948_accRead((uint16_t*)&sensorData[6]);
 
          mov_flag[7]++;
         // sensorData[0]=mov_flag[7];
@@ -614,10 +614,10 @@ static void sensorTaskFxn(UArg a0, UArg a1){
 
 /*       if (mpuIntStatus & MPU_DATA_READY){
          // Read gyro data
-          SensorMpu9250_gyroRead((uint16_t*)sensorData);
+          SensorIcm20948_gyroRead((uint16_t*)sensorData);
 
           // Read accelerometer data
-          SensorMpu9250_accRead((uint16_t*)&sensorData[6]);
+          SensorIcm20948_accRead((uint16_t*)&sensorData[6]);
           mov_flag[0]++;
         }
   */
@@ -724,8 +724,8 @@ static void appStateSet(uint8_t newState)
   {
     appState = APP_STATE_OFF;
 
-    SensorMpu9250_enable(0);
-   // SensorMpu9250_powerOff();
+    SensorIcm20948_enable(0);
+   // SensorIcm20948_powerOff();
 
     // Stop scheduled data measurements
     Util_stopClock(&periodicClock);
@@ -740,11 +740,11 @@ static void appStateSet(uint8_t newState)
     shakeDetected = false;
     mpuDataRdy = false;
 
-    SensorMpu9250_powerOn();
-    SensorMpu9250_enable(mpuConfig & 0xFF);
+    SensorIcm20948_powerOn();
+    SensorIcm20948_enable(mpuConfig & 0xFF);
 
     //Set frequency of the gyro and the Accel
-    SensorMpu9250_MPU_frqconfig(0);
+    SensorIcm20948_MPU_frqconfig(0);
 
 
     if (newState == APP_STATE_ACTIVE)

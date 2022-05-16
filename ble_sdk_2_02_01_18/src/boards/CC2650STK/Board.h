@@ -81,8 +81,8 @@ extern "C" {
 #define     Board_MAX30102_ADDR     (0x57)
 
 /* Interface #1 */
-#define     Board_MPU9250_ADDR      (0x68)
-#define     Board_MPU9250_MAG_ADDR  (0x0C)
+#define     Board_ICM20948_ADDR      (0x68)
+#define     Board_ICM20948_MAG_ADDR  (0x0C)
 
 #ifdef __cplusplus
 }

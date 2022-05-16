@@ -712,6 +712,16 @@
 			<locationURI>TI_RTOS_DRIVERS_BASE/ti/mw/sensors/SensorI2C.h</locationURI>
 		</link>
 		<link>
+			<name>Middleware/sensors/SensorIcm20948.c</name>
+			<type>1</type>
+			<location>C:/Users/WESSTLab/Biomonitor_Portable/sensortag_cc2650stk_app/Middleware/sensors/SensorIcm20948.c</location>
+		</link>
+		<link>
+			<name>Middleware/sensors/SensorIcm20948.h</name>
+			<type>1</type>
+			<location>C:/Users/WESSTLab/Biomonitor_Portable/sensortag_cc2650stk_app/Middleware/sensors/SensorIcm20948.h</location>
+		</link>
+		<link>
 			<name>Middleware/sensors/SensorMax30102.c</name>
 			<type>1</type>
 			<locationURI>WORKSPACE_LOC/tirtos_cc13xx_cc26xx_2_20_01_08/products/tidrivers_cc13xx_cc26xx_2_20_01_10/packages/ti/mw/sensors/SensorMax30102.c</locationURI>

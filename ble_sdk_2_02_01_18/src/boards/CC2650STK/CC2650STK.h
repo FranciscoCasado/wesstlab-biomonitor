@@ -162,8 +162,8 @@ extern const PIN_Config BoardGpioInitTable[];
 
 // PowerControl manage: Vcc max30102; Vcc MPU9250  ; Vcc_Movil; CS SPI(flash)
 #define Board_DP3   IOID_9
-#define Sensor_PWR_ON   1
-#define Sensor_PWR_OFF  0
+#define Sensor_PWR_ON   0
+#define Sensor_PWR_OFF  1
 
 ///* Sensor outputs */
 #define Board_MPU_INT               IOID_0          //JCL
