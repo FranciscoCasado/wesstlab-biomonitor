@@ -121,7 +121,7 @@
 #define ACCEL_SMPLRT_DIV_2            0x11 // R/W
 #define ACCEL_INTEL_CTRL              0x12 // R/W
 #define ACCEL_WOM_THR                 0x13 // R/W
-#define ACCEL_CONFIG_1                0x14 // R/W
+#define ACCEL_CONFIG                  0x14 // R/W
 #define ACCEL_CONFIG_2                0x15 // R/W
 
 // #define CONFIG                        0x1A // R/W TODO
@@ -129,9 +129,9 @@
 // #define FIFO_EN                       0x23 // R/W TODO
 
 
-// Masks is mpuConfig valiable
-#define ACC_CONFIG_MASK               0x38
-#define GYRO_CONFIG_MASK              0x07
+// Masks is mpuConfig variable
+#define ACC_CONFIG_MASK               0x38  // --XX X---
+#define GYRO_CONFIG_MASK              0x07  // ---- -XXX
 
 // Values PWR_MGMT_1
 #define MPU_SLEEP                     0x4F  // Sleep + stop all clocks
@@ -163,7 +163,7 @@
 // Bit values
 #define BIT_ANY_RD_CLR                0x10
 #define BIT_RAW_RDY_EN                0x01
-#define BIT_WOM_EN                    0x40
+#define BIT_WOM_EN                    0x08
 #define BIT_LPA_CYCLE                 0x20
 #define BIT_STBY_XA                   0x20
 #define BIT_STBY_YA                   0x10
@@ -275,31 +275,51 @@ static SensorIcm20948CallbackFn_t isrCallbackFn = NULL;
 * ------------------------------------------------------------------------------
 */
 
+void SensorIcm20948_selectBank(uint8_t bank){
+    val = bank;
+    ST_ASSERT(SensorI2C_writeReg(REG_BANK_SEL, &val, 1));
+}
+
+
 bool SensorIcm20948_MPU_frqconfig(uint8_t frq){
 
+    // TODO
     if (!SENSOR_SELECT())
       {
           return false;
       }
 
+    // ** USER BANK 2 **
+    SensorIcm20948_selectBank(USER_BANK_2);
+    
     // Set SRDiveder to zero
     val = 0x00;
-    ST_ASSERT(SensorI2C_writeReg(SMPLRT_DIV, &val, 1));
+    ST_ASSERT(SensorI2C_writeReg(GYRO_SMPLRT_DIV, &val, 1));
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_SMPLRT_DIV_1, &val, 1));
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_SMPLRT_DIV_2, &val, 1));
 
     // Set Accel LPF setting to 92 Hz Bandwidth
-    val = 0x02;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG_2, &val, 1));
+    
+    val = 0x10;
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG, &val, 1));
 
-    // Set FIfo: 0, and DLPF_CFG to set the gyroscope to 92 Hz Bandwidth
-    val = 0x02;
-    ST_ASSERT(SensorI2C_writeReg(CONFIG, &val, 1));
+    // Set Gyro LPF setting to 92 Hz Bandwidth and FS Sel to 500 DPS
+    val = 0x12;
+    ST_ASSERT(SensorI2C_writeReg(GYRO_CONFIG_1, &val, 1));
+    
+    // Enable Accel Hardware Intelligence/ Accel interrupt control-->Register 105
+    val = 0x03;
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_INTEL_CTRL, &val, 1));
 
-    // Set the Gyro FS Sel to 500 dps
-    val = 0x08;
-    ST_ASSERT(SensorI2C_writeReg(GYRO_CONFIG, &val, 1));
 
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+    
+    // Set FIFO MODE to Stream (0x00)
+    val = 0x00;
+    ST_ASSERT(SensorI2C_writeReg(FIFO_MODE, &val, 1));
 
-    // Make sure accelerometer is running
+    // Make sure accelerometer is running (auto select Clock source) and disable temperature sensor
     val = 0x09;
     ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_1, &val, 1));
 
@@ -307,35 +327,12 @@ bool SensorIcm20948_MPU_frqconfig(uint8_t frq){
     val = 0x00;
     ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_2, &val, 1));
 
-
-    //  RAW Ready Enable
-    // Wat is raw data function?
-    // wake on motion seems for usefull
-    val = BIT_RAW_RDY_EN; //BIT_WOM_EN;
-    ST_ASSERT(SensorI2C_writeReg(INT_ENABLE, &val, 1));
-
-
-   // Enable Accel Hardware Intelligence/ Accel interrupt control-->Register 105
-    val = 0xC0;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_INTEL_CTRL, &val, 1));
-
-
-    // Set Motion Threshold
-//       val = threshold;
-//       ST_ASSERT(SensorI2C_writeReg(WOM_THR, &val, 1));
-
-
-    /*
-    // Set Frequency of Wake-up
-       val = INV_LPA_20HZ;
-       ST_ASSERT(SensorI2C_writeReg(LP_ACCEL_ODR, &val, 1));
-     */
+    // Enable raw data ready interrupt from any sensor to propagate to interrupt pin 1
+    val = BIT_RAW_RDY_EN;
+    ST_ASSERT(SensorI2C_writeReg(INT_ENABLE_1, &val, 1));
 
     // Clear interrupt
      SensorI2C_readReg(INT_STATUS,&val,1);
-
-
-
 
     SENSOR_DESELECT();
     MSen_d[3]++;
@@ -450,6 +447,9 @@ bool SensorIcm20948_reset(void)
     {
         return false;
     }
+    
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
 
     // Device reset
     val = 0x80;
@@ -463,7 +463,7 @@ bool SensorIcm20948_reset(void)
     {
         // Initial configuration
         SensorIcm20948_accSetRange(ACC_RANGE_8G);
-        sensorMagInit();
+        //sensorMagInit();
 
         // Power save
         sensorMpuSleep();
@@ -484,12 +484,16 @@ bool SensorIcm20948_reset(void)
 */
 bool SensorIcm20948_enableWom(uint8_t threshold)
 {
+    // TODO
     ST_ASSERT(SensorIcm20948_powerIsOn());
 
     if (!SENSOR_SELECT())
     {
         return false;
     }
+    
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
 
     // Make sure accelerometer is running
     val = 0x09;
@@ -498,34 +502,35 @@ bool SensorIcm20948_enableWom(uint8_t threshold)
     // Enable accelerometer, disable gyro
     val = 0x07;
     ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_2, &val, 1));
-
-    // Set Accel LPF setting to 184 Hz Bandwidth
-    val = 0x01;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG_2, &val, 1));
-
+    
     // Enable Motion Interrupt
     val = BIT_WOM_EN;
     ST_ASSERT(SensorI2C_writeReg(INT_ENABLE, &val, 1));
 
+    // Enable Cycle Mode (Accel Low Power Mode)
+    val = 0x29;
+    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_1, &val, 1));
+
+
+    // ** USER BANK 2 **
+    SensorIcm20948_selectBank(USER_BANK_2);
+
+    // Set Accel LPF setting to 246 Hz Bandwidth and +-2g Full Scale
+    val = 0x09;
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG, &val, 1));
+
     // Enable Accel Hardware Intelligence
-    val = 0xC0;
+    val = 0x01;
     ST_ASSERT(SensorI2C_writeReg(ACCEL_INTEL_CTRL, &val, 1));
 
     // Set Motion Threshold
     val = threshold;
     ST_ASSERT(SensorI2C_writeReg(ACCEL_WOM_THR, &val, 1));
 
-    // Set Frequency of Wake-up
-    val = INV_LPA_20HZ;
-    ST_ASSERT(SensorI2C_writeReg(LP_ACCEL_ODR, &val, 1));
 
-    // Enable Cycle Mode (Accel Low Power Mode)
-    val = 0x29;
-    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_1, &val, 1));
-
-    // Select the current range
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1));
-
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+    
     // Clear interrupt
     SensorI2C_readReg(INT_STATUS,&val,1);
 
@@ -548,19 +553,21 @@ bool SensorIcm20948_enableWom(uint8_t threshold)
 */
 uint8_t SensorIcm20948_irqStatus(void)
 {
+    // TODO
     uint8_t intStatus;
 
     intStatus = 0;
     ST_ASSERT(SensorIcm20948_powerIsOn());
 
-    if (SENSOR_SELECT())
+    if (!SENSOR_SELECT()) { return intStatus } ;
+    
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+    if (!SensorI2C_readReg(INT_STATUS,&intStatus,1))
     {
-        if (!SensorI2C_readReg(INT_STATUS,&intStatus,1))
-        {
-            intStatus = 0;
-        }
-        SENSOR_DESELECT();
+        intStatus = 0;
     }
+    SENSOR_DESELECT();
 
     return intStatus;
 }
@@ -613,6 +620,7 @@ void SensorIcm20948_enable(uint16_t axes)
 */
 bool SensorIcm20948_accSetRange(uint8_t newRange)
 {
+        // TODO
     bool success;
 
     if (newRange == accRange)
@@ -627,7 +635,11 @@ bool SensorIcm20948_accSetRange(uint8_t newRange)
         return false;
     }
 
-    accRangeReg = (newRange << 3);
+    accRangeReg = (newRange << 1);
+    
+    
+    // ** USER BANK 2 **
+    SensorIcm20948_selectBank(USER_BANK_2);
 
     // Apply the range
     success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
@@ -652,6 +664,7 @@ bool SensorIcm20948_accSetRange(uint8_t newRange)
 */
 uint8_t SensorIcm20948_accReadRange(void)
 {
+    // TODO
     ST_ASSERT(SensorIcm20948_powerIsOn());
 
     if (!SENSOR_SELECT())
@@ -659,11 +672,15 @@ uint8_t SensorIcm20948_accReadRange(void)
         return false;
     }
 
+
+    // ** USER BANK 2 **
+    SensorIcm20948_selectBank(USER_BANK_2);
+    
     // Apply the range
     SensorI2C_readReg(ACCEL_CONFIG, &accRangeReg, 1);
     SENSOR_DESELECT();
 
-    accRange = (accRangeReg>>3) & 3;
+    accRange = (accRangeReg>>1) & 3;
 
     return accRange;
 }
@@ -678,6 +695,7 @@ uint8_t SensorIcm20948_accReadRange(void)
 */
 bool SensorIcm20948_accRead(uint16_t *data )
 {
+    // TODO
     bool success;
 
     ST_ASSERT(SensorIcm20948_powerIsOn());
@@ -687,6 +705,10 @@ bool SensorIcm20948_accRead(uint16_t *data )
     {
         return false;
     }
+    
+    
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
 
     success = SensorI2C_readReg(ACCEL_XOUT_H, (uint8_t*)data, DATA_SIZE);
     SENSOR_DESELECT();
@@ -708,6 +730,7 @@ bool SensorIcm20948_accRead(uint16_t *data )
 */
 bool SensorIcm20948_gyroRead(uint16_t *data )
 {
+    // TODO
     bool success;
 
     ST_ASSERT(SensorIcm20948_powerIsOn());
@@ -717,6 +740,9 @@ bool SensorIcm20948_gyroRead(uint16_t *data )
     {
         return false;
     }
+    
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
 
     // Burst read of all gyroscope values
     success = SensorI2C_readReg(GYRO_XOUT_H, (uint8_t*)data, DATA_SIZE);
@@ -740,6 +766,7 @@ bool SensorIcm20948_gyroRead(uint16_t *data )
  */
 bool SensorIcm20948_test(void)
 {
+    // TODO
     static bool first = true;
 
     ST_ASSERT(SensorIcm20948_powerIsOn());
@@ -757,6 +784,9 @@ bool SensorIcm20948_test(void)
         first = false;
     }
 
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+    
     // Check the WHO AM I register
     ST_ASSERT(SensorI2C_readReg(WHO_AM_I, &val, 1));
     ST_ASSERT(val == 0x71);
@@ -830,6 +860,7 @@ float SensorIcm20948_gyroConvert(int16_t data)
 */
 static void sensorMpuSleep(void)
 {
+    // TODO
     bool success;
 
     ST_ASSERT_V(SensorIcm20948_powerIsOn());
@@ -839,13 +870,16 @@ static void sensorMpuSleep(void)
         return;
     }
 
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+
     val = ALL_AXES;
     success = SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
-    if (success)
-    {
-        val = MPU_SLEEP;
-        success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
-    }
+    if (!success) return;
+    
+    val = MPU_SLEEP;
+    success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
+    
 
     SENSOR_DESELECT();
 }
@@ -859,6 +893,7 @@ static void sensorMpuSleep(void)
 */
 static void sensorIcm20948WakeUp(void)
 {
+    // TODO
     bool success;
 
     ST_ASSERT_V(SensorIcm20948_powerIsOn());
@@ -868,6 +903,9 @@ static void sensorIcm20948WakeUp(void)
         return;
     }
 
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+    
     val = MPU_WAKE_UP;
     success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
 
@@ -879,17 +917,17 @@ static void sensorIcm20948WakeUp(void)
         mpuConfig = 0;
     }
 
-    if (success)
-    {
-        // Restore the range
-        success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
+    if (!success) return;
+    // ** USER BANK 2 **
+    SensorIcm20948_selectBank(USER_BANK_2);
+    // Restore the range
+    success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
 
-        if (success)
-        {
-            // Clear interrupts
-            success = SensorI2C_readReg(INT_STATUS,&val,1);
-        }
-    }
+    if (!success) return;
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
+    // Clear interrupts
+    success = SensorI2C_readReg(INT_STATUS,&val,1);
 
     SENSOR_DESELECT();
 }
@@ -903,11 +941,14 @@ static void sensorIcm20948WakeUp(void)
 */
 static void sensorIcm20948SelectAxes(void)
 {
+    // TODO
     if (!SENSOR_SELECT())
     {
         return;
     }
 
+    // ** USER BANK 0 **
+    SensorIcm20948_selectBank(USER_BANK_0);
     // Select gyro and accelerometer (3+3 axes, one bit each)
     val = ~mpuConfig;
     SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
@@ -927,6 +968,7 @@ static void sensorIcm20948SelectAxes(void)
 */
 static bool sensorIcm20948SetBypass(void)
 {
+    // TODO
     bool success;
 
     if (SENSOR_SELECT())
@@ -954,6 +996,7 @@ static bool sensorIcm20948SetBypass(void)
 */
 static void sensorMagInit(void)
 {
+    // TODO
     ST_ASSERT_V(SensorIcm20948_powerIsOn());
 
     if (!sensorIcm20948SetBypass())
@@ -996,6 +1039,7 @@ static void sensorMagInit(void)
  */
 void SensorIcm20948_magReset(void)
 {
+    // TODO
     ST_ASSERT_V(SensorIcm20948_powerIsOn());
 
     if (sensorIcm20948SetBypass())
@@ -1028,6 +1072,7 @@ void SensorIcm20948_magReset(void)
  */
 static void sensorMagEnable(bool enable)
 {
+    // TODO
     uint8_t val;
 
     ST_ASSERT_V(SensorIcm20948_powerIsOn());
@@ -1064,6 +1109,7 @@ static void sensorMagEnable(bool enable)
  */
 bool SensorIcm20948_magTest(void)
 {
+    // TODO
     ST_ASSERT(SensorIcm20948_powerIsOn());
 
     // Connect magnetometer internally in Icm20948
@@ -1091,6 +1137,7 @@ bool SensorIcm20948_magTest(void)
 */
 uint8_t SensorIcm20948_magRead(int16_t *data)
 {
+    // TODO
     uint8_t val;
     uint8_t rawData[7];  // x/y/z compass register data, ST2 register stored here,
     // must read ST2 at end of data acquisition
