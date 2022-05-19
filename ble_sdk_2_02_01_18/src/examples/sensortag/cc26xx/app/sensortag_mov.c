@@ -252,7 +252,7 @@ void SensorTagMov_init(void)
      if (SensorIcm20948_init())
      {
        SensorTagMov_reset();
-      // SensorIcm20948_registerCallback(SensorTagMov_processInterrupt);
+       SensorIcm20948_registerCallback(SensorTagMov_processInterrupt);
      }
 
      // Initialize characteristics

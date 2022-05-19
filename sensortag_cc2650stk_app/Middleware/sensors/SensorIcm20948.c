@@ -463,7 +463,7 @@ bool SensorIcm20948_reset(void)
     {
         // Initial configuration
         SensorIcm20948_accSetRange(ACC_RANGE_8G);
-        //sensorMagInit();
+        sensorMagInit();
 
         // Power save
         sensorMpuSleep();
@@ -559,7 +559,7 @@ uint8_t SensorIcm20948_irqStatus(void)
     intStatus = 0;
     ST_ASSERT(SensorIcm20948_powerIsOn());
 
-    if (!SENSOR_SELECT()) { return intStatus } ;
+    if (!SENSOR_SELECT()) return intStatus;
     
     // ** USER BANK 0 **
     SensorIcm20948_selectBank(USER_BANK_0);
@@ -697,7 +697,6 @@ bool SensorIcm20948_accRead(uint16_t *data )
 {
     // TODO
     bool success;
-
     ST_ASSERT(SensorIcm20948_powerIsOn());
 
     // Burst read of all accelerometer values
@@ -711,6 +710,7 @@ bool SensorIcm20948_accRead(uint16_t *data )
     SensorIcm20948_selectBank(USER_BANK_0);
 
     success = SensorI2C_readReg(ACCEL_XOUT_H, (uint8_t*)data, DATA_SIZE);
+
     SENSOR_DESELECT();
 
     if (success)

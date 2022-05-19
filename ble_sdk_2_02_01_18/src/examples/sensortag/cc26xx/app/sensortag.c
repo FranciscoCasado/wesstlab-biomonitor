@@ -741,7 +741,7 @@ static void SensorTag_taskFxn(UArg a0, UArg a1)
 #endif
 
      //SensorTagOpt_processSensorEvent();
-     //SensorTagMov_processSensorEvent();
+     SensorTagMov_processSensorEvent();
       SensorTagBatt_processSensorEvent();
     }
     senflag[6]++;
