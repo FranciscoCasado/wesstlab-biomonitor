@@ -183,23 +183,18 @@
 #define BIT_AUX_IF_EN                 0x20
 
 // Magnetometer registers
-#define MAG_WHO_AM_I                  0x00  // Should return 0x48
-#define MAG_INFO                      0x01
-#define MAG_ST1                       0x02  // Data ready status: bit 0
-#define MAG_XOUT_L                    0x03  // Data array
-#define MAG_XOUT_H                    0x04
-#define MAG_YOUT_L                    0x05
-#define MAG_YOUT_H                    0x06
-#define MAG_ZOUT_L                    0x07
-#define MAG_ZOUT_H                    0x08
-#define MAG_ST2                       0x09  // Overflow(bit 3), read err(bit 2)
-#define MAG_CNTL1                     0x0A  // Mode bits 3:0, resolution bit 4
-#define MAG_CNTL2                     0x0B  // System reset, bit 0
-#define MAG_ASTC                      0x0C  // Self test control
-#define MAG_I2CDIS                    0x0F  // I2C disable
-#define MAG_ASAX                      0x10  // x-axis sensitivity adjustment
-#define MAG_ASAY                      0x11  // y-axis sensitivity adjustment
-#define MAG_ASAZ                      0x12  // z-axis sensitivity adjustment
+#define MAG_WHO_AM_I                  0x01  // Should return 0x48
+// #define MAG_INFO                      0x01
+#define MAG_ST1                       0x10  // Data ready status: bit 0
+#define MAG_XOUT_L                    0x11  // Data array
+#define MAG_XOUT_H                    0x12
+#define MAG_YOUT_L                    0x13
+#define MAG_YOUT_H                    0x14
+#define MAG_ZOUT_L                    0x15
+#define MAG_ZOUT_H                    0x16
+#define MAG_ST2                       0x18  // Overflow(bit 3), read err(bit 2)
+#define MAG_CNTL1                     0x31  // Mode bits 3:0, resolution bit 4
+#define MAG_CNTL2                     0x32  // System reset, bit 0
 
 #define MAG_DEVICE_ID                 0x48
 
@@ -973,6 +968,9 @@ static bool sensorIcm20948SetBypass(void)
 
     if (SENSOR_SELECT())
     {
+        // ** USER BANK 0 **
+        SensorIcm20948_selectBank(USER_BANK_0);
+        
         val = BIT_BYPASS_EN | BIT_LATCH_EN;
         success = SensorI2C_writeReg(INT_PIN_CFG, &val, 1);
         DELAY_MS(10);
