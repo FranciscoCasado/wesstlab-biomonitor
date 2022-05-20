@@ -132,7 +132,7 @@
 static Clock_Struct periodicClock;
 static uint16_t sensorPeriod;
 static volatile bool sensorReadScheduled;
-static uint8_t sensorData[SENSOR_DATA_LEN];
+static uint8_t MPUData[SENSOR_DATA_LEN];
 
 // Entity ID globally used to check for source and/or destination of messages
 static ICall_EntityID sensorSelfEntity;
@@ -338,10 +338,10 @@ if (sensorReadScheduled){
         else if (mpuIntStatus & MPU_DATA_READY)
         {
           // Read gyro data
-          SensorIcm20948_gyroRead((uint16_t*)sensorData);
+          SensorIcm20948_gyroRead((uint16_t*)MPUData);
 
           // Read accelerometer data
-          SensorIcm20948_accRead((uint16_t*)&sensorData[6]);
+          SensorIcm20948_accRead((uint16_t*)&MPUData[6]);
           mov_flag[0]++;
 
           // What is this for???
@@ -360,7 +360,7 @@ if (sensorReadScheduled){
         {
           uint8_t status;
 
-          status = SensorIcm20948_magRead((int16_t*)&sensorData[12]);
+          status = SensorIcm20948_magRead((int16_t*)&MPUData[12]);
 
           // Always measure magnetometer (not interrupt driven)
           if (status == MAG_BYPASS_FAIL)
@@ -376,7 +376,7 @@ if (sensorReadScheduled){
         }
 
 
-    //    Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, sensorData);
+    //    Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, MPUData);
     //    mov_flag[2]++;
       }
 
@@ -399,7 +399,7 @@ if (sensorReadScheduled){
         }
 
         // Send data
-        Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, sensorData);
+        Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, MPUData);
       }
       else
       {
@@ -605,19 +605,19 @@ static void sensorTaskFxn(UArg a0, UArg a1){
          //mpuIntStatus = SensorIcm20948_irqStatus();
 
          // Read accelerometer and gyro data
-         SensorIcm20948_gyroRead((uint16_t*)sensorData);
-         SensorIcm20948_accRead((uint16_t*)&sensorData[6]);
+         SensorIcm20948_gyroRead((uint16_t*)MPUData);
+         SensorIcm20948_accRead((uint16_t*)&MPUData[6]);
 
          mov_flag[7]++;
-        // sensorData[0]=mov_flag[7];
-        Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, sensorData);
+        // MPUData[0]=mov_flag[7];
+        Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, MPUData);
 
 /*       if (mpuIntStatus & MPU_DATA_READY){
          // Read gyro data
-          SensorIcm20948_gyroRead((uint16_t*)sensorData);
+          SensorIcm20948_gyroRead((uint16_t*)MPUData);
 
           // Read accelerometer data
-          SensorIcm20948_accRead((uint16_t*)&sensorData[6]);
+          SensorIcm20948_accRead((uint16_t*)&MPUData[6]);
           mov_flag[0]++;
         }
   */
@@ -708,8 +708,8 @@ static void sensorChangeCB(uint8_t paramID)
 static void initCharacteristicValue(uint8_t paramID, uint8_t value,
                                     uint8_t paramLen)
 {
-  memset(sensorData,value,paramLen);
-  Movement_setParameter(paramID, paramLen, sensorData);
+  memset(MPUData,value,paramLen);
+  Movement_setParameter(paramID, paramLen, MPUData);
 }
 
 /*******************************************************************************

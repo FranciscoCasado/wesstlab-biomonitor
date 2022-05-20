@@ -752,7 +752,8 @@ bool SensorIcm20948_gyroRead(uint16_t *data )
     return success;
 }
 
-/*******************************************************************************
+/******************************************************
+ * *************************
  * @fn          SensorIcm20948_test
  *
  * @brief       Run a sensor self-test
@@ -1012,13 +1013,13 @@ static void sensorMagInit(void)
         DELAY_MS(10);
 
         // Get calibration data
-        if (SensorI2C_readReg(MAG_ASAX, &rawData[0], 3))
-        {
+        //if (SensorI2C_readReg(MAG_ASAX, &rawData[0], 3))
+        //{
             // Return x-axis sensitivity adjustment values, etc.
-            calX =  (int16_t)rawData[0] + 128;
-            calY =  (int16_t)rawData[1] + 128;
-            calZ =  (int16_t)rawData[2] + 128;
-        }
+        //    calX =  (int16_t)rawData[0] + 128;
+        //    calY =  (int16_t)rawData[1] + 128;
+        //    calZ =  (int16_t)rawData[2] + 128;
+        //}
 
         // Turn off the sensor by doing a reset
         val = 0x01;
