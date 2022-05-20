@@ -31,14 +31,14 @@
  */
 
 /** ============================================================================
- *  @file       SensorIcm20948.h
+ *  @file       SensorIcm42670p.h
  *
- *  @brief      Driver for the InvenSense Icm20948 Motion Processing Unit.
+ *  @brief      Driver for the InvenSense Icm42670p Motion Processing Unit.
  *
  *  ============================================================================
  */
-#ifndef SENSOR_Icm20948_H
-#define SENSOR_Icm20948_H
+#ifndef SENSOR_Icm42670p_H
+#define SENSOR_Icm42670p_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,7 +85,7 @@ extern "C" {
  *                                           Typedefs
  * -----------------------------------------------------------------------------
 */
-typedef void (*SensorIcm20948CallbackFn_t)(void);
+typedef void (*SensorIcm42670pCallbackFn_t)(void);
 
 /* -----------------------------------------------------------------------------
  *                                          Functions
@@ -93,36 +93,31 @@ typedef void (*SensorIcm20948CallbackFn_t)(void);
  */
 
 
-bool SensorIcm20948_MPU_frqconfig(uint8_t frq);
-bool SensorIcm20948_Acel_frqconfig(uint8_t frq);
-bool SensorIcm20948_Gyro_frqconfig(uint8_t frq);
+bool SensorIcm42670p_MPU_frqconfig(uint8_t frq);
+bool SensorIcm42670p_Acel_frqconfig(uint8_t frq);
+bool SensorIcm42670p_Gyro_frqconfig(uint8_t frq);
 
 
 
-bool SensorIcm20948_init(void);
-bool SensorIcm20948_reset(void);
-void SensorIcm20948_registerCallback(SensorIcm20948CallbackFn_t);
-bool SensorIcm20948_test(void);
-void SensorIcm20948_powerOn(void);
-void SensorIcm20948_powerOff(void);
-bool SensorIcm20948_powerIsOn(void);
+bool SensorIcm42670p_init(void);
+bool SensorIcm42670p_reset(void);
+void SensorIcm42670p_registerCallback(SensorIcm42670pCallbackFn_t);
+bool SensorIcm42670p_test(void);
+void SensorIcm42670p_powerOn(void);
+void SensorIcm42670p_powerOff(void);
+bool SensorIcm42670p_powerIsOn(void);
 
-void SensorIcm20948_enable(uint16_t config);
-bool SensorIcm20948_enableWom(uint8_t threshold);
-uint8_t SensorIcm20948_irqStatus(void);
+void SensorIcm42670p_enable(uint16_t config);
+bool SensorIcm42670p_enableWom(uint8_t threshold);
+uint8_t SensorIcm42670p_irqStatus(void);
 
-bool SensorIcm20948_accSetRange(uint8_t range);
-uint8_t SensorIcm20948_accReadRange(void);
-bool SensorIcm20948_accRead(uint16_t *rawData);
-float SensorIcm20948_accConvert(int16_t rawValue);
+bool SensorIcm42670p_accSetRange(uint8_t range);
+uint8_t SensorIcm42670p_accReadRange(void);
+bool SensorIcm42670p_accRead(uint16_t *rawData);
+float SensorIcm42670p_accConvert(int16_t rawValue);
 
-bool SensorIcm20948_gyroRead(uint16_t *rawData);
-float SensorIcm20948_gyroConvert(int16_t rawValue);
-
-bool SensorIcm20948_magTest(void);
-uint8_t SensorIcm20948_magRead(int16_t *pRawData);
-uint8_t SensorIcm20948_magStatus(void);
-void SensorIcm20948_magReset(void);
+bool SensorIcm42670p_gyroRead(uint16_t *rawData);
+float SensorIcm42670p_gyroConvert(int16_t rawValue);
 
 /*******************************************************************************
 */
