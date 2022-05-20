@@ -51,62 +51,35 @@
 *  Constants and macros
 * ------------------------------------------------------------------------------
 */
-// Registers
-#define SELF_TEST_X_GYRO              0x00 // R/W
-#define SELF_TEST_Y_GYRO              0x01 // R/W
-#define SELF_TEST_Z_GYRO              0x02 // R/W
-#define SELF_TEST_X_ACCEL             0x0D // R/W
-#define SELF_TEST_Z_ACCEL             0x0E // R/W
-#define SELF_TEST_Y_ACCEL             0x0F // R/W
 
-#define XG_OFFSET_H                   0x13 // R/W
-#define XG_OFFSET_L                   0x14 // R/W
-#define YG_OFFSET_H                   0x15 // R/W
-#define YG_OFFSET_L                   0x16 // R/W
-#define ZG_OFFSET_H                   0x17 // R/W
-#define ZG_OFFSET_L                   0x18 // R/W
+//Registers
 
-#define SMPLRT_DIV                    0x19 // R/W   25
-#define CONFIG                        0x1A // R/W   26
-#define GYRO_CONFIG                   0x1B // R/W   27
-#define ACCEL_CONFIG                  0x1C // R/W   28
-#define ACCEL_CONFIG_2                0x1D // R/W   29
-#define LP_ACCEL_ODR                  0x1E // R/W
-#define WOM_THR                       0x1F // R/W
-#define FIFO_EN                       0x23 // R/W
-
-// .. registers 0x24 - 0x36 are not applicable to the SensorTag HW configuration
-
-#define INT_PIN_CFG                   0x37 // R/W
-#define INT_ENABLE                    0x38 // R/W
-#define INT_STATUS                    0x3A // R
-#define ACCEL_XOUT_H                  0x3B // R
-#define ACCEL_XOUT_L                  0x3C // R
-#define ACCEL_YOUT_H                  0x3D // R
-#define ACCEL_YOUT_L                  0x3E // R
-#define ACCEL_ZOUT_H                  0x3F // R
-#define ACCEL_ZOUT_L                  0x40 // R
-#define TEMP_OUT_H                    0x41 // R
-#define TEMP_OUT_L                    0x42 // R
-#define GYRO_XOUT_H                   0x43 // R
-#define GYRO_XOUT_L                   0x44 // R
-#define GYRO_YOUT_H                   0x45 // R
-#define GYRO_YOUT_L                   0x46 // R
-#define GYRO_ZOUT_H                   0x47 // R
-#define GYRO_ZOUT_L                   0x48 // R
-
-// .. registers 0x49 - 0x60 are not applicable to the SensorTag HW configuration
-// .. registers 0x63 - 0x67 are not applicable to the SensorTag HW configuration
-
-#define SIGNAL_PATH_RESET             0x68 // R/W
-#define ACCEL_INTEL_CTRL              0x69 // R/W
-#define USER_CTRL                     0x6A // R/W
-#define PWR_MGMT_1                    0x6B // R/W
-#define PWR_MGMT_2                    0x6C // R/W
-#define FIFO_COUNT_H                  0x72 // R/W
-#define FIFO_COUNT_L                  0x73 // R/W
-#define FIFO_R_W                      0x74 // R/W
-#define WHO_AM_I                      0x75 // R/W
+#define MCLK_RDY                0x00    //  R
+#define INT_CONFIG              0x06    //  R/W
+#define ACCEL_DATA_X1           0x0B    //  R
+#define ACCEL_DATA_X0           0x0C    //  R
+#define ACCEL_DATA_Y1           0x0D    //  R
+#define ACCEL_DATA_Y0           0x0E    //  R
+#define ACCEL_DATA_Z1           0x0F    //  R
+#define ACCEL_DATA_Z0           0x10    //  R
+#define GYRO_DATA_X1            0x11    //  R
+#define GYRO_DATA_X0            0x12    //  R
+#define GYRO_DATA_Y1            0x13    //  R
+#define GYRO_DATA_Y0            0x14    //  R
+#define GYRO_DATA_Z1            0x15    //  R
+#define GYRO_DATA_Z0            0x16    //  R
+#define PWR_MGMT0               0x1F    //  R/W
+#define GYRO_CONFIG0            0x20    //  R/W
+#define ACCELS_CONFIG0          0x21    //  R/W
+#define GYRO_CONFIG1            0x23    //  R/W
+#define ACCELS_CONFIG1          0x24    //  R/W
+#define APEX_CONFIG0            0x25    //  R/W
+#define APEX_CONFIG1            0x26    //  R/W
+#define WOM_CONFIG              0x27    //  R/W
+#define FIFO_CONFIG1            0x28    //  R/W
+#define INT_SOURCE0             0x2B    //  R/W
+#define INT_STATUS_DRDY         0x39    //  R/C
+#define WHO_AM_I                0x75    //  R
 
 // Masks is mpuConfig valiable
 #define ACC_CONFIG_MASK               0x38
@@ -179,9 +152,6 @@ static void sensorMpuSleep(void);
 static void sensorIcm42670pWakeUp(void);
 static void sensorIcm42670pSelectAxes(void);
 static void SensorIcm42670p_Callback(PIN_Handle handle, PIN_Id pinId);
-static void sensorMagInit(void);
-static void sensorMagEnable(bool);
-static bool sensorIcm42670pSetBypass(void);
 
 /* -----------------------------------------------------------------------------
 *  Local Variables
@@ -192,21 +162,10 @@ static bool sensorIcm42670pSetBypass(void);
 
 uint8_t MSen_d[5];
 
-
 static uint8_t mpuConfig;
-static uint8_t magStatus;
 static uint8_t accRange;
 static uint8_t accRangeReg;
 static uint8_t val;
-
-// Magnetometer calibration
-static int16_t calX;
-static int16_t calY;
-static int16_t calZ;
-
-// Magnetometer control
-static uint8_t scale = MFS_16BITS;      // 16 bit resolution
-static uint8_t mode = MAG_MODE_SINGLE;  // Operating mode
 
 // Pins that are used by the Icm42670p
 static PIN_Config MpuPinTable[] =
@@ -396,7 +355,6 @@ bool SensorIcm42670p_reset(void)
 
     accRange = ACC_RANGE_INVALID;
     mpuConfig = 0;   // All axes off
-    magStatus = 0;
 
     if (!SENSOR_SELECT())
     {
@@ -415,7 +373,6 @@ bool SensorIcm42670p_reset(void)
     {
         // Initial configuration
         SensorIcm42670p_accSetRange(ACC_RANGE_8G);
-        sensorMagInit();
 
         // Power save
         sensorMpuSleep();
@@ -543,7 +500,7 @@ void SensorIcm42670p_enable(uint16_t axes)
 
     if (mpuConfig != 0)
     {   MSen_d[1]++;
-        // Enable gyro + accelerometer + magnetometer readout
+        // Enable gyro + accelerometer
         sensorIcm42670pSelectAxes();
     }
     else if (mpuConfig == 0)
@@ -849,7 +806,7 @@ static void sensorIcm42670pWakeUp(void)
 /*******************************************************************************
 * @fn          sensorIcm42670pSelectAxes
 *
-* @brief       Select gyro, accelerometer, magnetometer
+* @brief       Select gyro, accelerometer
 *
 * @return      none
 */
@@ -865,293 +822,4 @@ static void sensorIcm42670pSelectAxes(void)
     SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
 
     SENSOR_DESELECT();
-
-    // Select magnetometer (all axes at once)
-    sensorMagEnable(!!(mpuConfig & MPU_AX_MAG));
-}
-
-/*******************************************************************************
-* @fn          sensorIcm42670pSetBypass
-*
-* @brief       Allow the I2C bus to control the magnetomoter
-*
-* @return      true if success
-*/
-static bool sensorIcm42670pSetBypass(void)
-{
-    bool success;
-
-    if (SENSOR_SELECT())
-    {
-        val = BIT_BYPASS_EN | BIT_LATCH_EN;
-        success = SensorI2C_writeReg(INT_PIN_CFG, &val, 1);
-        DELAY_MS(10);
-
-        SENSOR_DESELECT();
-    }
-    else
-    {
-        success = false;
-    }
-
-    return success;
-}
-
-/*******************************************************************************
-* @fn          sensorMagInit
-*
-* @brief       Initialize the compass
-*
-* @return      none
-*/
-static void sensorMagInit(void)
-{
-    ST_ASSERT_V(SensorIcm42670p_powerIsOn());
-
-    if (!sensorIcm42670pSetBypass())
-    {
-        return;
-    }
-
-    if (SENSOR_SELECT_MAG())
-    {
-        static uint8_t rawData[3];
-
-        // Enter Fuse ROM access mode
-        val = MAG_MODE_FUSE;
-        SensorI2C_writeReg(MAG_CNTL1, &val, 1);
-        DELAY_MS(10);
-
-        // Get calibration data
-        if (SensorI2C_readReg(MAG_ASAX, &rawData[0], 3))
-        {
-            // Return x-axis sensitivity adjustment values, etc.
-            calX =  (int16_t)rawData[0] + 128;
-            calY =  (int16_t)rawData[1] + 128;
-            calZ =  (int16_t)rawData[2] + 128;
-        }
-
-        // Turn off the sensor by doing a reset
-        val = 0x01;
-        SensorI2C_writeReg(MAG_CNTL2, &val, 1);
-
-        SENSOR_DESELECT();
-    }
-}
-
-/*******************************************************************************
- * @fn          SensorIcm42670p_magReset
- *
- * @brief       Reset the magnetometer
- *
- * @return      none
- */
-void SensorIcm42670p_magReset(void)
-{
-    ST_ASSERT_V(SensorIcm42670p_powerIsOn());
-
-    if (sensorIcm42670pSetBypass())
-    {
-        if (SENSOR_SELECT_MAG())
-        {
-            // Turn off the sensor by doing a reset
-            val = 0x01;
-            SensorI2C_writeReg(MAG_CNTL2, &val, 1);
-            DELAY_MS(10);
-
-            // Re-enable if already active
-            if (mpuConfig & MPU_AX_MAG)
-            {
-                // Set magnetometer data resolution and sample ODR
-                val = (scale << 4) | mode;
-                SensorI2C_writeReg(MAG_CNTL1, &val, 1);
-            }
-            SENSOR_DESELECT();
-        }
-    }
-}
-
-/*******************************************************************************
- * @fn          sensorMagEnable
- *
- * @brief       Enable or disable the compass part of the Icm42670p
- *
- * @return      none
- */
-static void sensorMagEnable(bool enable)
-{
-    uint8_t val;
-
-    ST_ASSERT_V(SensorIcm42670p_powerIsOn());
-
-    if (!sensorIcm42670pSetBypass())
-    {
-        return;
-    }
-
-    if (SENSOR_SELECT_MAG())
-    {
-        if (enable)
-        {
-            // Set magnetometer data resolution and sample ODR
-            val = (scale << 4) | mode;
-        }
-        else
-        {
-            // Power down magnetometer
-            val = 0x00;
-        }
-        SensorI2C_writeReg(MAG_CNTL1, &val, 1);
-
-        SENSOR_DESELECT();
-    }
-}
-
-/*******************************************************************************
- * @fn          SensorIcm42670p_magTest
- *
- * @brief       Run a magnetometer self test
- *
- * @return      TRUE if passed, FALSE if failed
- */
-bool SensorIcm42670p_magTest(void)
-{
-    ST_ASSERT(SensorIcm42670p_powerIsOn());
-
-    // Connect magnetometer internally in Icm42670p
-    sensorIcm42670pSetBypass();
-
-    // Select magnetometer
-    SENSOR_SELECT_MAG();
-
-    // Check the WHO AM I register
-    val = 0xFF;
-    ST_ASSERT(SensorI2C_readReg(MAG_WHO_AM_I, &val, 1));
-    ST_ASSERT(val == MAG_DEVICE_ID);
-
-    SENSOR_DESELECT();
-
-    return true;
-}
-
-/*******************************************************************************
-* @fn          SensorIcm42670p_magRead
-*
-* @brief       Read data from the compass - X, Y, Z - 3 words
-*
-* @return      Magnetometer status
-*/
-uint8_t SensorIcm42670p_magRead(int16_t *data)
-{
-    uint8_t val;
-    uint8_t rawData[7];  // x/y/z compass register data, ST2 register stored here,
-    // must read ST2 at end of data acquisition
-    magStatus = MAG_NO_POWER;
-    ST_ASSERT(SensorIcm42670p_powerIsOn());
-
-    magStatus = MAG_STATUS_OK;
-
-    // Connect magnetometer internally in Icm42670p
-    SENSOR_SELECT();
-    val = BIT_BYPASS_EN | BIT_LATCH_EN;
-    if (!SensorI2C_writeReg(INT_PIN_CFG, &val, 1))
-    {
-        magStatus = MAG_BYPASS_FAIL;
-    }
-    SENSOR_DESELECT();
-
-    if (magStatus != MAG_STATUS_OK)
-    {
-        return false;
-    }
-
-    // Select this sensor
-    SENSOR_SELECT_MAG();
-
-    if (SensorI2C_readReg(MAG_ST1,&val,1))
-    {
-        // Check magnetometer data ready bit
-        if (val & 0x01)
-        {
-            // Burst read of all compass values + ST2 register
-            if (SensorI2C_readReg(MAG_XOUT_L, &rawData[0],7))
-            {
-                val = rawData[6]; // ST2 register
-
-                // Check if magnetic sensor overflow set, if not report data
-                if(!(val & 0x08))
-                {
-                    // Turn the MSB and LSB into a signed 16-bit value,
-                    // data stored as little Endian
-                    data[0] = ((int16_t)rawData[1] << 8) | rawData[0];
-                    data[1] = ((int16_t)rawData[3] << 8) | rawData[2];
-                    data[2] = ((int16_t)rawData[5] << 8) | rawData[4];
-
-                    // Sensitivity adjustment
-                    data[0] = data[0] * calX >> 8;
-                    data[1] = data[1] * calY >> 8;
-                    data[2] = data[2] * calZ >> 8;
-                }
-                else
-                {
-                    magStatus = MAG_OVERFLOW;
-                }
-            }
-            else
-            {
-                magStatus = MAG_READ_DATA_ERR;
-            }
-        }
-        else
-        {
-            magStatus = MAG_DATA_NOT_RDY;
-        }
-    }
-    else
-    {
-        magStatus = MAG_READ_ST_ERR;
-    }
-
-    // Set magnetometer data resolution and sample ODR
-    // Start new conversion
-    val = (scale << 4) | mode;
-    SensorI2C_writeReg(MAG_CNTL1, &val, 1);
-
-    SENSOR_DESELECT();
-
-    return magStatus;
-}
-
-/*******************************************************************************
-* @fn          SensorIcm42670p_magStatus
-*
-* @brief       Return the magnetometer status
-*
-* @return      mag status
-*/
-uint8_t SensorIcm42670p_magStatus(void)
-{
-    return magStatus;
-}
-
-/*******************************************************************************
- *  @fn         SensorIcm42670p_Callback
- *
- *  Interrupt service routine for the MPU
- *
- *  @param      handle PIN_Handle connected to the callback
- *
- *  @param      pinId  PIN_Id of the DIO triggering the callback
- *
- *  @return     none
- ******************************************************************************/
-static void SensorIcm42670p_Callback(PIN_Handle handle, PIN_Id pinId)
-{
-    if (pinId == Board_MPU_INT)
-    {
-        if (isrCallbackFn != NULL)
-        {
-            isrCallbackFn();
-        }
-    }
 }
