@@ -4,7 +4,7 @@
 
  @brief This file contains the Movement Processor sub-application. It uses the
         MPU-9250 Wake-on-movement feature to allow the
-        MPU to turn off the gyroscope and magnetometer when no activity is
+        MPU to turn off the gyroscope and when no activity is
         detected.
 
  Group: WCS, BTS
@@ -158,11 +158,11 @@ Semaphore_Handle hMovSem;
 // Application state variables
 
 // MPU config:
-// bit 0-2:   accelerometer enable(z,y,x)
-// bit 3-5:   gyroscope enable (z,y,x)
-// bit 6:     magnetometer enable
-// bit 7:     WOM enable
-// bit 8-9:   accelerometer range (2,4,8,16)
+// bit 0-2:   
+// bit 3-5:   
+// bit 6:     
+// bit 7:     
+// bit 8-9:   
 
 uint16_t mpuConfig;
 //static uint16_t mpuConfig;
@@ -356,24 +356,6 @@ if (sensorReadScheduled){
 
         mpuDataRdy = false;
 
-        if (appState == APP_STATE_ACTIVE && !!(mpuConfig & MPU_AX_MAG))
-        {
-          uint8_t status;
-
-          status = SensorMpu9250_magRead((int16_t*)&sensorData[12]);
-
-          // Always measure magnetometer (not interrupt driven)
-          if (status == MAG_BYPASS_FAIL)
-          {
-            // Idle on error
-            nActivity = 0;
-            appState = APP_STATE_ERROR;
-          }
-          else if (status != MAG_STATUS_OK)
-          {
-            SensorMpu9250_magReset();
-          }
-        }
 
 
     //    Movement_setParameter(SENSOR_DATA, SENSOR_DATA_LEN, sensorData);

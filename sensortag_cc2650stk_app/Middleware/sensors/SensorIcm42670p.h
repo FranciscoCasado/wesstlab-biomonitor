@@ -65,21 +65,12 @@ extern "C" {
 // Axis bitmaps
 #define MPU_AX_GYR        0x07
 #define MPU_AX_ACC        0x38
-#define MPU_AX_MAG        0x40
 #define MPU_AX_ALL        0x7F
 
 // Interrupt status bit
 #define MPU_DATA_READY    0x01
 #define MPU_MOVEMENT      0x40
 
-// Magnetometer status
-#define MAG_STATUS_OK     0x00
-#define MAG_READ_ST_ERR   0x01
-#define MAG_DATA_NOT_RDY  0x02
-#define MAG_OVERFLOW      0x03
-#define MAG_READ_DATA_ERR 0x04
-#define MAG_BYPASS_FAIL   0x05
-#define MAG_NO_POWER      0x06
 
 /* ----------------------------------------------------------------------------
  *                                           Typedefs
