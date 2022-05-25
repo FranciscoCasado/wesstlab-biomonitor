@@ -67,7 +67,7 @@
  Release Name: ble_sdk_2_02_01_18
  Release Date: 2016-10-26 15:20:04
  ******************************************************************************/
-dkjhbauvbsjdlkfnvblsdkfjvsdfv
+
 #if defined(CC2650DK_7ID) || defined(CC2650DK_5XD) || defined(CC2650DK_4XS)
     #include "./cc2650em/cc2650em_board.h"
 #elif defined(CC2650EM_5XD)     // JCL

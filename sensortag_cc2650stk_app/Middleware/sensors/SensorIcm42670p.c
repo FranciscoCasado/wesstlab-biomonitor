@@ -70,15 +70,17 @@
 #define GYRO_DATA_Z0            0x16    //  R
 #define PWR_MGMT0               0x1F    //  R/W
 #define GYRO_CONFIG0            0x20    //  R/W
-#define ACCELS_CONFIG0          0x21    //  R/W
+#define ACCEL_CONFIG0           0x21    //  R/W
 #define GYRO_CONFIG1            0x23    //  R/W
-#define ACCELS_CONFIG1          0x24    //  R/W
+#define ACCEL_CONFIG1           0x24    //  R/W
 #define APEX_CONFIG0            0x25    //  R/W
 #define APEX_CONFIG1            0x26    //  R/W
 #define WOM_CONFIG              0x27    //  R/W
 #define FIFO_CONFIG1            0x28    //  R/W
 #define INT_SOURCE0             0x2B    //  R/W
+#define INT_SOURCE1             0x2C    //  R/W
 #define INT_STATUS_DRDY         0x39    //  R/C
+#define INT_STATUS              0x3A    //  R/C
 #define WHO_AM_I                0x75    //  R
 
 // Masks is mpuConfig valiable
@@ -97,51 +99,34 @@
 // Data sizes
 #define DATA_SIZE                     6
 
-// Output data rates
-#define INV_LPA_0_3125HZ              0
-#define INV_LPA_0_625HZ               1
-#define INV_LPA_1_25HZ                2
-#define INV_LPA_2_5HZ                 3
-#define INV_LPA_5HZ                   4
-#define INV_LPA_10HZ                  5
-#define INV_LPA_20HZ                  6
-#define INV_LPA_40HZ                  7
-#define INV_LPA_80HZ                  8
-#define INV_LPA_160HZ                 9
-#define INV_LPA_320HZ                 10
-#define INV_LPA_640HZ                 11
-#define INV_LPA_STOPPED               255
 
-// Bit values
-#define BIT_ANY_RD_CLR                0x10
-#define BIT_RAW_RDY_EN                0x01
-#define BIT_WOM_EN                    0x40
-#define BIT_LPA_CYCLE                 0x20
-#define BIT_STBY_XA                   0x20
-#define BIT_STBY_YA                   0x10
-#define BIT_STBY_ZA                   0x08
-#define BIT_STBY_XG                   0x04
-#define BIT_STBY_YG                   0x02
-#define BIT_STBY_ZG                   0x01
-#define BIT_STBY_XYZA                 (BIT_STBY_XA | BIT_STBY_YA | BIT_STBY_ZA)
-#define BIT_STBY_XYZG                 (BIT_STBY_XG | BIT_STBY_YG | BIT_STBY_ZG)
+// Parameters
+#define ACCEL_UI_FS_SEL             0x60    // +-2g
+#define ACCEL_ODR                   0x0B    // 25 Hz
 
-// User control register
-#define BIT_LATCH_EN                  0x20
-#define BIT_ACTL                      0x80
+#define ACCEL_UI_AVG                0x00    // 2x average
+#define ACCEL_UI_FILT_BW            0x00    // bypass LP filter
 
-// INT Pin / Bypass Enable Configuration
-#define BIT_BYPASS_EN                 0x02
-#define BIT_AUX_IF_EN                 0x20
+#define ACCEL_LP_CLK_SEL            0x00    // LP mode
+#define IDLE                        0x00    // RC oscillator turns off when Gyro & Accel are off
+#define GYRO_MODE                   0x00    // Gyro off
+#define ACCEL_MODE                  0x02    // Accel LP mode
 
+#define WOM_INT_DUR                 0x00    // WoM int asserted at first event
+#define WOM_INT_MODE                0x00    // WoM int on the OR of all enabled accel thresholds
+#define WOM_MODE                    0x02    // Compare current sample to previous
+#define WOM_EN                      0x01    // WoM enabled
 
+#define WOM_Z_INT1_EN               0x04    // WoM Z routed to INT1
+#define WOM_Y_INT1_EN               0x02    // WoM Y routed to INT1
+#define WOM_X_INT1_EN               0x01    // WoM X routed to INT1
 
 // Resolution
 #define MFS_14BITS                    0     // 0.6 mG per LSB
 #define MFS_16BITS                    1     // 0.15 mG per LSB
 
 // Sensor selection/de-selection
-#define SENSOR_SELECT()               SensorI2C_select(SENSOR_I2C_1,Board_Icm42670p_ADDR)
+#define SENSOR_SELECT()               SensorI2C_select(SENSOR_I2C_1,Board_ICM20948_ADDR)
 #define SENSOR_DESELECT()             SensorI2C_deselect()
 
 /* -----------------------------------------------------------------------------
@@ -193,42 +178,31 @@ bool SensorIcm42670p_MPU_frqconfig(uint8_t frq){
           return false;
       }
 
-    // Set SRDiveder to zero
-    val = 0x00;
-    ST_ASSERT(SensorI2C_writeReg(SMPLRT_DIV, &val, 1));
+    // Set FullScale to +-2g and Output Datarate
+    
+    val = ACCEL_UI_FS_SEL | ACCEL_ODR ;
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG0, &val, 1));
 
-    // Set Accel LPF setting to 92 Hz Bandwidth
-    val = 0x02;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG_2, &val, 1));
-
-    // Set FIfo: 0, and DLPF_CFG to set the gyroscope to 92 Hz Bandwidth
-    val = 0x02;
-    ST_ASSERT(SensorI2C_writeReg(CONFIG, &val, 1));
-
-    // Set the Gyro FS Sel to 500 dps
-    val = 0x08;
-    ST_ASSERT(SensorI2C_writeReg(GYRO_CONFIG, &val, 1));
-
+    val = ACCEL_UI_AVG | ACCEL_UI_FILT_BW; // = 0x00
+    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG1, &val, 1));
 
     // Make sure accelerometer is running
-    val = 0x09;
-    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_1, &val, 1));
+    val = ACCEL_LP_CLK_SEL | IDLE | GYRO_MODE | ACCEL_MODE;
+    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT0, &val, 1));
 
-    // Enable accelerometer, and gyro
-    val = 0x00;
-    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_2, &val, 1));
+
 
 
     //  RAW Ready Enable
     // Wat is raw data function?
     // wake on motion seems for usefull
-    val = BIT_RAW_RDY_EN; //BIT_WOM_EN;
-    ST_ASSERT(SensorI2C_writeReg(INT_ENABLE, &val, 1));
+    // val = BIT_RAW_RDY_EN; //BIT_WOM_EN;
+    // ST_ASSERT(SensorI2C_writeReg(INT_ENABLE, &val, 1));
 
 
    // Enable Accel Hardware Intelligence/ Accel interrupt control-->Register 105
-    val = 0xC0;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_INTEL_CTRL, &val, 1));
+    // val = 0xC0;
+    // ST_ASSERT(SensorI2C_writeReg(ACCEL_INTEL_CTRL, &val, 1));
 
 
     // Set Motion Threshold
@@ -243,6 +217,7 @@ bool SensorIcm42670p_MPU_frqconfig(uint8_t frq){
      */
 
     // Clear interrupt
+     SensorI2C_readReg(INT_STATUS_DRDY,&val,1);
      SensorI2C_readReg(INT_STATUS,&val,1);
 
 
@@ -348,6 +323,7 @@ bool SensorIcm42670p_init(void)
 */
 bool SensorIcm42670p_reset(void)
 {
+    return true;
     bool ret;
 
     // Make sure pin interrupt is disabled
@@ -359,23 +335,6 @@ bool SensorIcm42670p_reset(void)
     if (!SENSOR_SELECT())
     {
         return false;
-    }
-
-    // Device reset
-    val = 0x80;
-    SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
-    SENSOR_DESELECT();
-
-    DELAY_MS(100);
-
-    ret = SensorIcm42670p_test();
-    if (ret)
-    {
-        // Initial configuration
-        SensorIcm42670p_accSetRange(ACC_RANGE_8G);
-
-        // Power save
-        sensorMpuSleep();
     }
 
     return ret;
@@ -400,43 +359,27 @@ bool SensorIcm42670p_enableWom(uint8_t threshold)
         return false;
     }
 
-    // Make sure accelerometer is running
-    val = 0x09;
-    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_1, &val, 1));
+    // Enable Wake on Motion
+    
+    val = WOM_INT_DUR | WOM_INT_MODE | WOM_MODE | WOM_EN;
+    ST_ASSERT(SensorI2C_writeReg(WOM_CONFIG, &val, 1));
+    
+    // Enable WOM interrupts
+    val = WOM_Z_INT1_EN | WOM_Y_INT1_EN | WOM_X_INT1_EN;
+    ST_ASSERT(SensorI2C_writeReg(INT_SOURCE1, &val, 1));
 
-    // Enable accelerometer, disable gyro
-    val = 0x07;
-    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_2, &val, 1));
 
-    // Set Accel LPF setting to 184 Hz Bandwidth
-    val = 0x01;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG_2, &val, 1));
+    // // Set Motion Threshold
+    // val = threshold;
+    // ST_ASSERT(SensorI2C_writeReg(WOM_THR, &val, 1));
 
-    // Enable Motion Interrupt
-    val = BIT_WOM_EN;
-    ST_ASSERT(SensorI2C_writeReg(INT_ENABLE, &val, 1));
-
-    // Enable Accel Hardware Intelligence
-    val = 0xC0;
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_INTEL_CTRL, &val, 1));
-
-    // Set Motion Threshold
-    val = threshold;
-    ST_ASSERT(SensorI2C_writeReg(WOM_THR, &val, 1));
-
-    // Set Frequency of Wake-up
-    val = INV_LPA_20HZ;
-    ST_ASSERT(SensorI2C_writeReg(LP_ACCEL_ODR, &val, 1));
-
-    // Enable Cycle Mode (Accel Low Power Mode)
-    val = 0x29;
-    ST_ASSERT(SensorI2C_writeReg(PWR_MGMT_1, &val, 1));
-
-    // Select the current range
-    ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1));
+    // // Set Frequency of Wake-up
+    // val = INV_LPA_20HZ;
+    // ST_ASSERT(SensorI2C_writeReg(LP_ACCEL_ODR, &val, 1));
 
     // Clear interrupt
-    SensorI2C_readReg(INT_STATUS,&val,1);
+     SensorI2C_readReg(INT_STATUS_DRDY,&val,1);
+     SensorI2C_readReg(INT_STATUS,&val,1);
 
     SENSOR_DESELECT();
 
@@ -501,7 +444,6 @@ void SensorIcm42670p_enable(uint16_t axes)
     if (mpuConfig != 0)
     {   MSen_d[1]++;
         // Enable gyro + accelerometer
-        sensorIcm42670pSelectAxes();
     }
     else if (mpuConfig == 0)
     {
@@ -522,29 +464,12 @@ void SensorIcm42670p_enable(uint16_t axes)
 */
 bool SensorIcm42670p_accSetRange(uint8_t newRange)
 {
+    return true;
     bool success;
 
     if (newRange == accRange)
     {
         return true;
-    }
-
-    ST_ASSERT(SensorIcm42670p_powerIsOn());
-
-    if (!SENSOR_SELECT())
-    {
-        return false;
-    }
-
-    accRangeReg = (newRange << 3);
-
-    // Apply the range
-    success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
-    SENSOR_DESELECT();
-
-    if (success)
-    {
-        accRange = newRange;
     }
 
     return success;
@@ -568,13 +493,11 @@ uint8_t SensorIcm42670p_accReadRange(void)
         return false;
     }
 
-    // Apply the range
-    SensorI2C_readReg(ACCEL_CONFIG, &accRangeReg, 1);
     SENSOR_DESELECT();
 
     accRange = (accRangeReg>>3) & 3;
 
-    return accRange;
+    return 0;
 }
 
 
@@ -597,7 +520,7 @@ bool SensorIcm42670p_accRead(uint16_t *data )
         return false;
     }
 
-    success = SensorI2C_readReg(ACCEL_XOUT_H, (uint8_t*)data, DATA_SIZE);
+    success = SensorI2C_readReg(ACCEL_DATA_X1, (uint8_t*)data, DATA_SIZE);
     SENSOR_DESELECT();
 
     if (success)
@@ -628,7 +551,7 @@ bool SensorIcm42670p_gyroRead(uint16_t *data )
     }
 
     // Burst read of all gyroscope values
-    success = SensorI2C_readReg(GYRO_XOUT_H, (uint8_t*)data, DATA_SIZE);
+    success = SensorI2C_readReg(GYRO_DATA_X1, (uint8_t*)data, DATA_SIZE);
 
     SENSOR_DESELECT();
 
@@ -688,30 +611,7 @@ bool SensorIcm42670p_test(void)
 float SensorIcm42670p_accConvert(int16_t rawData)
 {
     float v;
-
-    switch (accRange)
-    {
-    case ACC_RANGE_2G:
-        //-- calculate acceleration, unit G, range -2, +2
-        v = (rawData * 1.0) / (32768/2);
-        break;
-
-    case ACC_RANGE_4G:
-        //-- calculate acceleration, unit G, range -4, +4
-        v = (rawData * 1.0) / (32768/4);
-        break;
-
-    case ACC_RANGE_8G:
-        //-- calculate acceleration, unit G, range -8, +8
-        v = (rawData * 1.0) / (32768/8);
-        break;
-
-    case ACC_RANGE_16G:
-        //-- calculate acceleration, unit G, range -16, +16
-        v = (rawData * 1.0) / (32768/16);
-        break;
-    }
-
+    v = (rawData * 1.0) / (32768/2);
     return v;
 }
 
@@ -740,20 +640,13 @@ float SensorIcm42670p_gyroConvert(int16_t data)
 static void sensorMpuSleep(void)
 {
     bool success;
+    return true;
 
     ST_ASSERT_V(SensorIcm42670p_powerIsOn());
 
     if (!SENSOR_SELECT())
     {
         return;
-    }
-
-    val = ALL_AXES;
-    success = SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
-    if (success)
-    {
-        val = MPU_SLEEP;
-        success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
     }
 
     SENSOR_DESELECT();
@@ -769,6 +662,7 @@ static void sensorMpuSleep(void)
 static void sensorIcm42670pWakeUp(void)
 {
     bool success;
+    return true;
 
     ST_ASSERT_V(SensorIcm42670p_powerIsOn());
 
@@ -777,49 +671,30 @@ static void sensorIcm42670pWakeUp(void)
         return;
     }
 
-    val = MPU_WAKE_UP;
-    success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
 
-    if (success)
-    {
-        // All axis initially disabled
-        val = ALL_AXES;
-        success = SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
-        mpuConfig = 0;
-    }
-
-    if (success)
-    {
-        // Restore the range
-        success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
-
-        if (success)
-        {
-            // Clear interrupts
-            success = SensorI2C_readReg(INT_STATUS,&val,1);
-        }
-    }
 
     SENSOR_DESELECT();
 }
 
 /*******************************************************************************
-* @fn          sensorIcm42670pSelectAxes
+* @fn          sensorIcm42670p_Callback
 *
-* @brief       Select gyro, accelerometer
+* Interrupt service routine for the MPU
+*
+* @param       handle PIN_Handle connected to the callback
+*
+* @param       pinId  PIN_Id of the DIO triggering the callback
 *
 * @return      none
 */
-static void sensorIcm42670pSelectAxes(void)
+
+static void SensorIcm42670p_Callback(PIN_Handle handle, PIN_Id pinId)
 {
-    if (!SENSOR_SELECT())
+    if (pinId == Board_MPU_INT)
     {
-        return;
+        if (isrCallbackFn != NULL)
+        {
+            isrCallbackFn();
+        }
     }
-
-    // Select gyro and accelerometer (3+3 axes, one bit each)
-    val = ~mpuConfig;
-    SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
-
-    SENSOR_DESELECT();
 }
