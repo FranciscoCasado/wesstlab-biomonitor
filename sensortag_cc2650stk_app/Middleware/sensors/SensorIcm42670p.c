@@ -126,7 +126,7 @@
 #define MFS_16BITS                    1     // 0.15 mG per LSB
 
 // Sensor selection/de-selection
-#define SENSOR_SELECT()               SensorI2C_select(SENSOR_I2C_1,Board_Icm42670p_ADDR)
+#define SENSOR_SELECT()               SensorI2C_select(SENSOR_I2C_1,Board_ICM20948_ADDR)
 #define SENSOR_DESELECT()             SensorI2C_deselect()
 
 /* -----------------------------------------------------------------------------
@@ -187,7 +187,7 @@ bool SensorIcm42670p_MPU_frqconfig(uint8_t frq){
     ST_ASSERT(SensorI2C_writeReg(ACCEL_CONFIG1, &val, 1));
 
     // Make sure accelerometer is running
-    val = ACCEL_LP_CLK_SEL | IDLE | GYRO_MODE | ACCEL_MODE
+    val = ACCEL_LP_CLK_SEL | IDLE | GYRO_MODE | ACCEL_MODE;
     ST_ASSERT(SensorI2C_writeReg(PWR_MGMT0, &val, 1));
 
 
@@ -337,23 +337,6 @@ bool SensorIcm42670p_reset(void)
         return false;
     }
 
-    // Device reset
-    val = 0x80;
-    SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
-    SENSOR_DESELECT();
-
-    DELAY_MS(100);
-
-    ret = SensorIcm42670p_test();
-    if (ret)
-    {
-        // Initial configuration
-        SensorIcm42670p_accSetRange(ACC_RANGE_8G);
-
-        // Power save
-        sensorMpuSleep();
-    }
-
     return ret;
 }
 
@@ -461,7 +444,6 @@ void SensorIcm42670p_enable(uint16_t axes)
     if (mpuConfig != 0)
     {   MSen_d[1]++;
         // Enable gyro + accelerometer
-        sensorIcm42670pSelectAxes();
     }
     else if (mpuConfig == 0)
     {
@@ -490,24 +472,6 @@ bool SensorIcm42670p_accSetRange(uint8_t newRange)
         return true;
     }
 
-    ST_ASSERT(SensorIcm42670p_powerIsOn());
-
-    if (!SENSOR_SELECT())
-    {
-        return false;
-    }
-
-    accRangeReg = (newRange << 3);
-
-    // Apply the range
-    success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
-    SENSOR_DESELECT();
-
-    if (success)
-    {
-        accRange = newRange;
-    }
-
     return success;
 }
 
@@ -529,8 +493,6 @@ uint8_t SensorIcm42670p_accReadRange(void)
         return false;
     }
 
-    // Apply the range
-    SensorI2C_readReg(ACCEL_CONFIG, &accRangeReg, 1);
     SENSOR_DESELECT();
 
     accRange = (accRangeReg>>3) & 3;
@@ -687,14 +649,6 @@ static void sensorMpuSleep(void)
         return;
     }
 
-    val = ALL_AXES;
-    success = SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
-    if (success)
-    {
-        val = MPU_SLEEP;
-        success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
-    }
-
     SENSOR_DESELECT();
 }
 
@@ -717,29 +671,30 @@ static void sensorIcm42670pWakeUp(void)
         return;
     }
 
-    val = MPU_WAKE_UP;
-    success = SensorI2C_writeReg(PWR_MGMT_1, &val, 1);
 
-    if (success)
-    {
-        // All axis initially disabled
-        val = ALL_AXES;
-        success = SensorI2C_writeReg(PWR_MGMT_2, &val, 1);
-        mpuConfig = 0;
-    }
-
-    if (success)
-    {
-        // Restore the range
-        success = SensorI2C_writeReg(ACCEL_CONFIG, &accRangeReg, 1);
-
-        if (success)
-        {
-            // Clear interrupts
-            success = SensorI2C_readReg(INT_STATUS,&val,1);
-        }
-    }
 
     SENSOR_DESELECT();
 }
 
+/*******************************************************************************
+* @fn          sensorIcm42670p_Callback
+*
+* Interrupt service routine for the MPU
+*
+* @param       handle PIN_Handle connected to the callback
+*
+* @param       pinId  PIN_Id of the DIO triggering the callback
+*
+* @return      none
+*/
+
+static void SensorIcm42670p_Callback(PIN_Handle handle, PIN_Id pinId)
+{
+    if (pinId == Board_MPU_INT)
+    {
+        if (isrCallbackFn != NULL)
+        {
+            isrCallbackFn();
+        }
+    }
+}
